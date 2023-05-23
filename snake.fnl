@@ -2,7 +2,7 @@
 ;; author:  Colin Woodbury, <colin@fosskers.ca>
 ;; desc:    Snake, the classic game.
 ;; site:    website link
-;; license: MIT License
+;; license: GPLv3
 ;; version: 0.1
 ;; script:  fennel
 ;; strict:  true
