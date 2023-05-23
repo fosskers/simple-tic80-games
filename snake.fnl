@@ -56,20 +56,27 @@
               snake)
     (set-food)))
 
+(fn colliding? [head body]
+  "Is the head colliding with the body?"
+  (accumulate [colliding false i piece (ipairs body) &until colliding]
+    (and (not (= i (length body)))  ;; The head itself.
+         (= head.x piece.x)
+         (= head.y piece.y))))
+
 (fn _G.TIC []
   (set t (+ t 1))
-  (local head (. snake (length snake)))
-  (local neck (. snake (- (length snake) 1)))
-  (local tail (. snake 1))
+  (var head (. snake (length snake)))
   (when (update?)
     ;; Move the snake.
     (table.insert snake {:x (% (+ head.x dir.x) 30)
                          :y (% (+ head.y dir.y) 17)})
-    (if (not (got-food? head))
-        (table.remove snake 1)
+    (set head (. snake (length snake)))
+    (if (colliding? head snake) (do (trace "Game over!") (exit))
+        (not (got-food? head)) (table.remove snake 1)
         (set-food)))
   ;; Change directions. Can happen any time, even if the snake isn't growing in
   ;; that frame.
+  (local neck (. snake (- (length snake) 1)))
   (local last-dir dir)
   (if (btn 0) (set dir (. dirs 1))
       (btn 1) (set dir (. dirs 2))
