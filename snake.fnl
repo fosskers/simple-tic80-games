@@ -1,7 +1,7 @@
 ;; title:   Fennel Snake
 ;; author:  Colin Woodbury, <colin@fosskers.ca>
 ;; desc:    Snake, the classic game.
-;; site:    website link
+;; site:    https://git.sr.ht/~fosskers/simple-tic80-games
 ;; license: GPLv3
 ;; version: 0.1
 ;; script:  fennel
@@ -21,6 +21,19 @@
 (var food {:x 1 :y 0})
 (var dir (. dirs 1))
 
+(fn init-grass []
+  "Calculate random positions for grass pixels."
+  (var grid [])
+  (for [y 1 136]
+    (table.insert grid y [])
+    (let [row (. grid y)]
+      (for [x 1 240]
+        (let [draw? (= 67 (math.random 1 67))]
+          (table.insert row x draw?)))))
+  grid)
+
+(var grass (init-grass))
+
 (fn update? []
   "Only move the Snake every 6 frames."
   (= 0 (% t 10)))
@@ -39,12 +52,16 @@
             8 8 5)))
 
 (fn draw-grass []
-  "Draw some randomly placed grass.")
+  "Draw some randomly placed grass."
+  (for [y 1 136]
+    (let [row (. grass y)]
+      (for [x 1 240]
+        (when (. row x)
+          (pix x y 6))))))
 
 (fn draw []
   (cls 3)
-  ;; Draw the food first, so that the snake's head will overwrite it when
-  ;; they're on the same square. This makes the "eating" look a bit better.
+  (draw-grass)
   (draw-food)
   (draw-snake))
 
