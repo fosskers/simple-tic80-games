@@ -27,16 +27,22 @@
 
 (fn draw-food []
   "Draw the Fennel."
-  (spr 2 (* 8 food.x) (* 8 food.y) 0))
+  (let [transparent 0
+        scale 1
+        flip (if (< (% t 40) 20) 0 1)]
+    (spr 2 (* 8 food.x) (* 8 food.y) transparent scale flip)))
 
 (fn draw-snake []
   (each [_ point (ipairs snake)]
       (rect (* 8 point.x)
             (* 8 point.y)
-            8 8 15)))
+            8 8 5)))
+
+(fn draw-grass []
+  "Draw some randomly placed grass.")
 
 (fn draw []
-  (cls 2)
+  (cls 3)
   ;; Draw the food first, so that the snake's head will overwrite it when
   ;; they're on the same square. This makes the "eating" look a bit better.
   (draw-food)
