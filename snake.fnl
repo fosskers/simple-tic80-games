@@ -25,17 +25,22 @@
   "Only move the Snake every 6 frames."
   (= 0 (% t 10)))
 
+(fn draw-food []
+  "Draw the Fennel."
+  (spr 1 (* 8 food.x) (* 8 food.y) 0))
+
+(fn draw-snake []
+  (each [_ point (ipairs snake)]
+      (rect (* 8 point.x)
+            (* 8 point.y)
+            8 8 15)))
+
 (fn draw []
   (cls 2)
   ;; Draw the food first, so that the snake's head will overwrite it when
   ;; they're on the same square. This makes the "eating" look a bit better.
-  (rect (* 8 food.x)
-        (* 8 food.y)
-        8 8 6)
-  (each [_ point (ipairs snake)]
-    (rect (* 8 point.x)
-          (* 8 point.y)
-          8 8 15)))
+  (draw-food)
+  (draw-snake))
 
 (fn got-food? [head]
   "Did we find the food this turn?"
@@ -88,14 +93,7 @@
   (draw))
 
 ;; <TILES>
-;; 001:eccccccccc888888caaaaaaaca888888cacccccccacc0ccccacc0ccccacc0ccc
-;; 002:ccccceee8888cceeaaaa0cee888a0ceeccca0ccc0cca0c0c0cca0c0c0cca0c0c
-;; 003:eccccccccc888888caaaaaaaca888888cacccccccacccccccacc0ccccacc0ccc
-;; 004:ccccceee8888cceeaaaa0cee888a0ceeccca0cccccca0c0c0cca0c0c0cca0c0c
-;; 017:cacccccccaaaaaaacaaacaaacaaaaccccaaaaaaac8888888cc000cccecccccec
-;; 018:ccca00ccaaaa0ccecaaa0ceeaaaa0ceeaaaa0cee8888ccee000cceeecccceeee
-;; 019:cacccccccaaaaaaacaaacaaacaaaaccccaaaaaaac8888888cc000cccecccccec
-;; 020:ccca00ccaaaa0ccecaaa0ceeaaaa0ceeaaaa0cee8888ccee000cceeecccceeee
+;; 001:06006000006060600006660000cccc000cccccc0cc0cc0cccccccccc0cccccc0
 ;; </TILES>
 
 ;; <WAVES>
