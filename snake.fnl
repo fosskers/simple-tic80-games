@@ -27,7 +27,7 @@
 
 (fn draw-food []
   "Draw the Fennel."
-  (spr 1 (* 8 food.x) (* 8 food.y) 0))
+  (spr 2 (* 8 food.x) (* 8 food.y) 0))
 
 (fn draw-snake []
   (each [_ point (ipairs snake)]
@@ -94,6 +94,7 @@
 
 ;; <TILES>
 ;; 001:06006000006060600006660000cccc000cccccc0cc0cc0cccccccccc0cccccc0
+;; 002:060060000060606000066600000ccc0000ccccc00cc0c0cc0ccccccc00ccccc0
 ;; </TILES>
 
 ;; <WAVES>
