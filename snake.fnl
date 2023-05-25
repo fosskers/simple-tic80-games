@@ -32,7 +32,7 @@
           (table.insert row x draw?)))))
   grid)
 
-(var grass (init-grass))
+(local grass (init-grass))
 
 (fn update? []
   "Only move the Snake every 6 frames."
@@ -43,7 +43,7 @@
   (let [transparent 0
         scale 1
         flip (if (< (% t 40) 20) 0 1)]
-    (spr 2 (* 8 food.x) (* 8 food.y) transparent scale flip)))
+    (spr 1 (* 8 food.x) (* 8 food.y) transparent scale flip)))
 
 (fn draw-snake []
   (each [_ point (ipairs snake)]
@@ -101,7 +101,9 @@
     (set head (. snake (length snake)))
     (if (colliding? head snake) (do (trace "Game over!") (exit))
         (not (got-food? head)) (table.remove snake 1)
-        (set-food)))
+        (do (set score (+ 1 score))
+            (sfx 0 (+ 20 score) 10)
+            (set-food))))
   ;; Change directions. Can happen any time, even if the snake isn't growing in
   ;; that frame.
   (local neck (. snake (- (length snake) 1)))
@@ -116,8 +118,7 @@
   (draw))
 
 ;; <TILES>
-;; 001:06006000006060600006660000cccc000cccccc0cc0cc0cccccccccc0cccccc0
-;; 002:060060000060606000066600000ccc0000ccccc00cc0c0cc0ccccccc00ccccc0
+;; 001:060060000060606000066600000ccc0000ccccc00cc0c0cc0ccccccc00ccccc0
 ;; </TILES>
 
 ;; <WAVES>
@@ -127,7 +128,7 @@
 ;; </WAVES>
 
 ;; <SFX>
-;; 000:000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000304000000000
+;; 000:020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200020002000200304000000000
 ;; </SFX>
 
 ;; <TRACKS>
