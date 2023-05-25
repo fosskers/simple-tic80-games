@@ -40,16 +40,21 @@
 
 (fn draw-food []
   "Draw the Fennel."
-  (let [transparent 0
+  (let [transparency 0
         scale 1
         flip (if (< (% t 40) 20) 0 1)]
-    (spr 1 (* 8 food.x) (* 8 food.y) transparent scale flip)))
+    (spr 1 (* 8 food.x) (* 8 food.y) transparency scale flip)))
 
 (fn draw-snake []
-  (each [_ point (ipairs snake)]
+  ;; Draw the body, leaving off the head.
+  (each [i point (ipairs snake) &until (= i (length snake))]
       (rect (* 8 point.x)
             (* 8 point.y)
-            8 8 5)))
+            8 8 5))
+  ;; Draw the head.
+  (let [head (. snake (length snake))
+        transparency 0]
+    (spr 2 (* 8 head.x) (* 8 head.y) transparency)))
 
 (fn draw-grass []
   "Draw some randomly placed grass."
@@ -119,6 +124,7 @@
 
 ;; <TILES>
 ;; 001:060060000060606000066600000ccc0000ccccc00cc0c0cc0ccccccc00ccccc0
+;; 002:0055550005555550055555505525525555555555555555550555555005555550
 ;; </TILES>
 
 ;; <WAVES>
