@@ -6,6 +6,7 @@
 ;; version: 0.1
 ;; script:  fennel
 ;; strict:  true
+;; input:   keyboard
 
 ;; Directions to move the head in.
 (local up {:x 0 :y -1})
