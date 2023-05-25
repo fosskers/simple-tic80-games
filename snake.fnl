@@ -47,21 +47,19 @@
     (spr 1 (* 8 food.x) (* 8 food.y) transparency scale flip)))
 
 (fn draw-snake []
-  ;; Draw the body, leaving off the head.
-  (each [i point (ipairs snake) &until (= i (length snake))]
-      (rect (* 8 point.x)
-            (* 8 point.y)
-            8 8 5))
-  ;; Draw the head.
-  (let [head (. snake (length snake))
-        transparency 0
-        scale 1
-        flip 0
-        rotate (if (= dir up) 0
-                   (= dir right) 1
-                   (= dir down) 2
-                   3)]
-    (spr 2 (* 8 head.x) (* 8 head.y) transparency scale flip rotate)))
+  (let [transparency 0]
+    ;; Draw the body, leaving off the head.
+    (each [i point (ipairs snake) &until (= i (length snake))]
+      (spr 3 (* 8 point.x) (* 8 point.y) transparency))
+    ;; Draw the head.
+    (let [head (. snake (length snake))
+          scale 1
+          flip 0
+          rotate (if (= dir up) 0
+                     (= dir right) 1
+                     (= dir down) 2
+                     3)]
+      (spr 2 (* 8 head.x) (* 8 head.y) transparency scale flip rotate))))
 
 (fn draw-grass []
   "Draw some randomly placed grass."
@@ -132,6 +130,7 @@
 ;; <TILES>
 ;; 001:060060000060606000066600000ccc0000ccccc00cc0c0cc0ccccccc00ccccc0
 ;; 002:0055550005555550055555505525525555555555555555550555555005555550
+;; 003:0055550005555550555555555555555555555555555555550555555000555500
 ;; </TILES>
 
 ;; <WAVES>
