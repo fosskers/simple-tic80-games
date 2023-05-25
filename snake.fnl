@@ -8,10 +8,11 @@
 ;; strict:  true
 
 ;; Directions to move the head in.
-(local dirs [{:x 0  :y -1}
-             {:x 0  :y 1}
-             {:x -1 :y 0}
-             {:x 1  :y 0}])
+(local up {:x 0 :y -1})
+(local down {:x 0 :y 1})
+(local left {:x -1 :y 0})
+(local right {:x 1 :y 0})
+(local dirs [up down left right])
 
 (var t 0)
 (var score 0)
@@ -53,8 +54,14 @@
             8 8 5))
   ;; Draw the head.
   (let [head (. snake (length snake))
-        transparency 0]
-    (spr 2 (* 8 head.x) (* 8 head.y) transparency)))
+        transparency 0
+        scale 1
+        flip 0
+        rotate (if (= dir up) 0
+                   (= dir right) 1
+                   (= dir down) 2
+                   3)]
+    (spr 2 (* 8 head.x) (* 8 head.y) transparency scale flip rotate)))
 
 (fn draw-grass []
   "Draw some randomly placed grass."
