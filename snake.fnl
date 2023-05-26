@@ -9,11 +9,11 @@
 ;; input:   keyboard
 
 ;; Directions to move the head in.
-(local up {:x 0 :y -1})
-(local down {:x 0 :y 1})
-(local left {:x -1 :y 0})
+(local up    {:x 0 :y -1})
+(local down  {:x 0 :y 1})
+(local left  {:x -1 :y 0})
 (local right {:x 1 :y 0})
-(local dirs [up down left right])
+(local dirs  [up down left right])
 
 (var t 0)
 (var score 0)
@@ -50,8 +50,11 @@
 (fn draw-snake []
   (let [transparency 0]
     ;; Draw the body, leaving off the head.
-    (each [i point (ipairs snake) &until (= i (length snake))]
-      (spr 3 (* 8 point.x) (* 8 point.y) transparency))
+    (each [i point (ipairs snake)]
+      ;; This `when' is a hack to avoid using an `until' clause, which isn't
+      ;; available until Fennel 1.2.0.
+      (when (~= i (length snake))
+        (spr 3 (* 8 point.x) (* 8 point.y) transparency)))
     ;; Draw the head.
     (let [head (. snake (length snake))
           scale 1
@@ -83,24 +86,26 @@
 
 (fn any? [p coll]
   "Does any element of the collection satisfy the predicate?"
-  (accumulate [found false _ x (ipairs coll) &until found]
-    (p x)))
+  (accumulate [found false i x (ipairs coll)]
+    ;; This `or' is a workaround to avoid using an `until' clause.
+    (or found (p i x))))
 
 (fn set-food []
   "Move the food to a new random square."
   (set food.x (math.random 0 29))
   (set food.y (math.random 0 16))
-  (when (any? (fn [piece] (and (= piece.x food.x)
-                               (= piece.y food.y)))
+  (when (any? (fn [_ piece] (and (= piece.x food.x)
+                                 (= piece.y food.y)))
               snake)
     (set-food)))
 
 (fn colliding? [head body]
   "Is the head colliding with the body?"
-  (accumulate [colliding false i piece (ipairs body) &until colliding]
-    (and (not (= i (length body)))  ;; The head itself.
-         (= head.x piece.x)
-         (= head.y piece.y))))
+  (any? (fn [i piece]
+          (and (not (= i (length body)))  ;; The head itself.
+               (= head.x piece.x)
+               (= head.y piece.y)))
+        body))
 
 (fn _G.TIC []
   (set t (+ t 1))
