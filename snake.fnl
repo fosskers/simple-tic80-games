@@ -3,7 +3,7 @@
 ;; desc:    Snake, the classic game.
 ;; site:    https://git.sr.ht/~fosskers/simple-tic80-games
 ;; license: GPLv3
-;; version: 0.1
+;; version: 0.1.1
 ;; script:  fennel
 ;; strict:  true
 ;; input:   keyboard
