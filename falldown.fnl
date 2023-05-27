@@ -63,6 +63,12 @@
   (each [_ row (ipairs rows)]
     (draw-row row)))
 
+(fn rising [rows]
+  "Raise every block by the rising rate."
+  (each [_ row (ipairs rows)]
+    (tset row :y (- row.y gravity-rate)))
+  rows)
+
 (fn gravity [ball]
   "Drop the ball."
   (tset ball :y (+ gravity-rate ball.y))
@@ -82,7 +88,7 @@
 
 (fn _G.TIC []
   (let [ball (->> state.ball gravity move)
-        rows (->> state.rows (maybe-spawn-row state.t state.spawn-rate))]
+        rows (->> state.rows (maybe-spawn-row state.t state.spawn-rate) rising)]
     (tset state :ball ball)
     (tset state :rows rows)
     (draw ball rows)
