@@ -19,7 +19,7 @@
 
 ;; The current state of the game.
 (var state {:t 0
-            :ball {:x (- 120 3) :y 0}})
+            :ball {:x (- 120 3) :y 1}})
 
 (fn draw-ball [ball]
   "Draw the ball."
@@ -37,11 +37,15 @@
 
 (fn move [ball]
   "Move the ball if a button is pressed."
-  (when (and (btn 2) (> ball.x 0))
+  (when (and (btn 2) (> (+ 1 ball.x) 0))
     (tset ball :x (- ball.x ball-rate)))
-  (when (and (btn 3) (< ball.x 240))
+  (when (and (btn 3) (< (+ 7 ball.x) 240))
     (tset ball :x (+ ball.x ball-rate)))
   ball)
+
+(fn game-over? [ball]
+  "Has the ball contacted the top of the screen?"
+  (= 0 ball.y))
 
 (fn _G.TIC []
   (let [ball (-> state.ball gravity move)]
