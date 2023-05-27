@@ -16,19 +16,52 @@
 (local ball-rate 2)
 ;; The downward pull of gravity.
 (local gravity-rate 1)
+;; The maximum width of the screen.
+(local max-width 240)
+;; The maximum height of the screen.
+(local max-height 136)
+;; The number of blocks that can fit in a single row.
+(local max-blocks (/ max-width 8))
+;; The index of the ball sprite.
+(local ball-sprite 257)
+;; The index of the block sprite.
+(local block-sprite 258)
 
 ;; The current state of the game.
 (var state {:t 0
-            :ball {:x (- 120 3) :y 1}})
+            :ball {:x (- 120 3) :y 1}
+            :rows []
+            :spawn-rate 60})
+
+(fn spawn-row []
+  "Generate a new row "
+  (let [row []]
+    (for [i 1 max-blocks]
+      (table.insert row true))
+    {:y max-height :blocks row}))
+
+(fn maybe-spawn-row [t spawn-rate rows]
+  "Spawn a new row if we're on the correct tick."
+  (when (= 0 (% t spawn-rate))
+    (table.insert rows 1 (spawn-row)))
+  rows)
+
+(fn draw-row [{:y y :blocks row}]
+  "Draw an entire row of obstacle blocks."
+  (each [i block (ipairs row)]
+    (when block
+      (spr block-sprite (* (- i 1) 8) y transparency))))
 
 (fn draw-ball [ball]
   "Draw the ball."
-  (spr 1 ball.x ball.y transparency))
+  (spr ball-sprite ball.x ball.y transparency))
 
-(fn draw [ball]
+(fn draw [ball rows]
   "Draw all sprites."
   (cls background)
-  (draw-ball ball))
+  (draw-ball ball)
+  (each [_ row (ipairs rows)]
+    (draw-row row)))
 
 (fn gravity [ball]
   "Drop the ball."
@@ -39,7 +72,7 @@
   "Move the ball if a button is pressed."
   (when (and (btn 2) (> (+ 1 ball.x) 0))
     (tset ball :x (- ball.x ball-rate)))
-  (when (and (btn 3) (< (+ 7 ball.x) 240))
+  (when (and (btn 3) (< (+ 7 ball.x) max-width))
     (tset ball :x (+ ball.x ball-rate)))
   ball)
 
@@ -48,14 +81,18 @@
   (= 0 ball.y))
 
 (fn _G.TIC []
-  (let [ball (-> state.ball gravity move)]
-    (draw ball))
+  (let [ball (->> state.ball gravity move)
+        rows (->> state.rows (maybe-spawn-row state.t state.spawn-rate))]
+    (tset state :ball ball)
+    (tset state :rows rows)
+    (draw ball rows)
+    (print state.t))
   (tset state :t (+ 1 state.t)))
 
-;; <TILES>
+;; <SPRITES>
 ;; 001:000000000000000000caaa000c09a0900a900a900aa009800a0a908000998800
 ;; 002:c555555655555556555555565555555655555557555555675555566766667777
-;; </TILES>
+;; </SPRITES>
 
 ;; <WAVES>
 ;; 000:00000000ffffffff00000000ffffffff
