@@ -72,16 +72,27 @@
 (fn colliding-down? [rows ball]
   "Is the ball colliding in the downward direction with some blocks?"
   (accumulate [colliding? false _ {:y y} (ipairs rows) &until colliding?]
-    (<= y (+ ball.y 8) (+ 7 y))))
+    (= y (+ ball.y 8))))
+
+(fn overlapping-down? [rows ball]
+  "Is the ball overlapping in the downward direction with some blocks?"
+  (accumulate [colliding? false _ {:y y} (ipairs rows) &until colliding?]
+    (< y (+ ball.y 8) (+ 7 y))))
 
 (fn gravity [ball]
   "Drop the ball."
-  (tset ball :y (+ gravity-rate ball.y))
+  (tset ball :y (+ ball.y gravity-rate))
+  ball)
+
+(fn raise-ball [ball]
+  "Collision has occurred and the ball must be raised."
+  (tset ball :y (- ball.y gravity-rate))
   ball)
 
 (fn maybe-gravity [rows ball]
   "Apply gravity if there's no downward collision."
   (if (colliding-down? rows ball) ball
+      (overlapping-down? rows ball) (raise-ball ball)
       (gravity ball)))
 
 (fn move [ball]
@@ -102,9 +113,8 @@
     (tset state :ball ball)
     (tset state :rows rows)
     (draw ball rows)
-    (when (colliding-down? rows ball)
-      (print "Ouch!"))
     (when (game-over? ball)
+      (trace "Game over!")
       (exit)))
   (tset state :t (+ 1 state.t)))
 
