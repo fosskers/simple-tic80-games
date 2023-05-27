@@ -8,19 +8,49 @@
 ;; strict:  true
 ;; input:   keyboard
 
-(var t 0)
+;; The index of the colour to be treated as transparent in sprites.
+(local transparency 0)
+;; The index of the background colour.
+(local background 13)
+;; The left-right movement speed of the ball.
+(local ball-rate 2)
+;; The downward pull of gravity.
+(local gravity-rate 1)
 
-(fn _G.TIC [])
+;; The current state of the game.
+(var state {:t 0
+            :ball {:x (- 120 3) :y 0}})
+
+(fn draw-ball [ball]
+  "Draw the ball."
+  (spr 1 ball.x ball.y transparency))
+
+(fn draw [ball]
+  "Draw all sprites."
+  (cls background)
+  (draw-ball ball))
+
+(fn gravity [ball]
+  "Drop the ball."
+  (tset ball :y (+ gravity-rate ball.y))
+  ball)
+
+(fn move [ball]
+  "Move the ball if a button is pressed."
+  (when (and (btn 2) (> ball.x 0))
+    (tset ball :x (- ball.x ball-rate)))
+  (when (and (btn 3) (< ball.x 240))
+    (tset ball :x (+ ball.x ball-rate)))
+  ball)
+
+(fn _G.TIC []
+  (let [ball (-> state.ball gravity move)]
+    (draw ball))
+  (tset state :t (+ 1 state.t)))
 
 ;; <TILES>
-;; 001:eccccccccc888888caaaaaaaca888888cacccccccacc0ccccacc0ccccacc0ccc
-;; 002:ccccceee8888cceeaaaa0cee888a0ceeccca0ccc0cca0c0c0cca0c0c0cca0c0c
-;; 003:eccccccccc888888caaaaaaaca888888cacccccccacccccccacc0ccccacc0ccc
-;; 004:ccccceee8888cceeaaaa0cee888a0ceeccca0cccccca0c0c0cca0c0c0cca0c0c
-;; 017:cacccccccaaaaaaacaaacaaacaaaaccccaaaaaaac8888888cc000cccecccccec
-;; 018:ccca00ccaaaa0ccecaaa0ceeaaaa0ceeaaaa0cee8888ccee000cceeecccceeee
-;; 019:cacccccccaaaaaaacaaacaaacaaaaccccaaaaaaac8888888cc000cccecccccec
-;; 020:ccca00ccaaaa0ccecaaa0ceeaaaa0ceeaaaa0cee8888ccee000cceeecccceeee
+;; 001:000000000000000000caaa000c09a0900a900a900aa009800a0a908000998800
+;; 002:c555555655555556555555565555555655555557555555675555566766667777
 ;; </TILES>
 
 ;; <WAVES>
