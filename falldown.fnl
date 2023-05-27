@@ -25,7 +25,7 @@
 ;; The index of the ball sprite.
 (local ball-sprite 257)
 ;; The index of the block sprite.
-(local block-sprite 258)
+(local block-sprite 1)
 
 ;; The current state of the game.
 (var state {:t 0
@@ -63,16 +63,26 @@
   (each [_ row (ipairs rows)]
     (draw-row row)))
 
-(fn rising [rows]
+(fn raise-rows [rows]
   "Raise every block by the rising rate."
   (each [_ row (ipairs rows)]
     (tset row :y (- row.y gravity-rate)))
   rows)
 
+(fn colliding-down? [rows ball]
+  "Is the ball colliding in the downward direction with some blocks?"
+  (accumulate [colliding? false _ {:y y} (ipairs rows) &until colliding?]
+    (<= y (+ ball.y 8) (+ 7 y))))
+
 (fn gravity [ball]
   "Drop the ball."
   (tset ball :y (+ gravity-rate ball.y))
   ball)
+
+(fn maybe-gravity [rows ball]
+  "Apply gravity if there's no downward collision."
+  (if (colliding-down? rows ball) ball
+      (gravity ball)))
 
 (fn move [ball]
   "Move the ball if a button is pressed."
@@ -87,17 +97,23 @@
   (= 0 ball.y))
 
 (fn _G.TIC []
-  (let [ball (->> state.ball gravity move)
-        rows (->> state.rows (maybe-spawn-row state.t state.spawn-rate) rising)]
+  (let [rows (->> state.rows (maybe-spawn-row state.t state.spawn-rate) raise-rows)
+        ball (->> state.ball (maybe-gravity rows) move)]
     (tset state :ball ball)
     (tset state :rows rows)
     (draw ball rows)
-    (print state.t))
+    (when (colliding-down? rows ball)
+      (print "Ouch!"))
+    (when (game-over? ball)
+      (exit)))
   (tset state :t (+ 1 state.t)))
+
+;; <TILES>
+;; 001:c555555655555556555555565555555655555557555555675555566766667777
+;; </TILES>
 
 ;; <SPRITES>
 ;; 001:000000000000000000caaa000c09a0900a900a900aa009800a0a908000998800
-;; 002:c555555655555556555555565555555655555557555555675555566766667777
 ;; </SPRITES>
 
 ;; <WAVES>
