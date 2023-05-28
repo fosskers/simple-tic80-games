@@ -37,7 +37,8 @@
   "Generate a new row "
   (let [row []]
     (for [i 1 max-blocks]
-      (table.insert row true))
+      (let [spawn? (~= 1 (math.random 1 (/ max-blocks 5)))]
+        (table.insert row spawn?)))
     {:y max-height :blocks row}))
 
 (fn maybe-spawn-row [t spawn-rate rows]
@@ -69,15 +70,28 @@
     (tset row :y (- row.y gravity-rate)))
   rows)
 
+(fn horizontal-overlap? [row ball]
+  "Is the ball within the x-range of any present blocks?"
+  (accumulate [overlap? false i block? (ipairs row) &until overlap?]
+    (and block?
+         (let [block-l (* (- i 1) 8)
+               block-r (+ 7 block-l)]
+           ;; It's only necessary to check the two corner points of the
+           ;; ball, not its entire bounding box.
+           (or (<= block-l (+ 1 ball.x) block-r)
+               (<= block-l (+ 6 ball.x) block-r))))))
+
 (fn colliding-down? [rows ball]
   "Is the ball colliding in the downward direction with some blocks?"
-  (accumulate [colliding? false _ {:y y} (ipairs rows) &until colliding?]
-    (= y (+ ball.y 8))))
+  (accumulate [colliding? false _ {:y y :blocks row} (ipairs rows) &until colliding?]
+    (and (= y (+ ball.y 8))
+         (horizontal-overlap? row ball))))
 
 (fn overlapping-down? [rows ball]
   "Is the ball overlapping in the downward direction with some blocks?"
-  (accumulate [colliding? false _ {:y y} (ipairs rows) &until colliding?]
-    (< y (+ ball.y 8) (+ 7 y))))
+  (accumulate [colliding? false _ {:y y :blocks row} (ipairs rows) &until colliding?]
+    (and (< y (+ ball.y 8) (+ 7 y))
+         (horizontal-overlap? row ball))))
 
 (fn gravity [ball]
   "Drop the ball."
@@ -106,6 +120,9 @@
 (fn game-over? [ball]
   "Has the ball contacted the top of the screen?"
   (= 0 ball.y))
+
+;; TODO
+;; Delete rows once they're offscreen.
 
 (fn _G.TIC []
   (let [rows (->> state.rows (maybe-spawn-row state.t state.spawn-rate) raise-rows)
