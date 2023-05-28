@@ -126,17 +126,20 @@
 
 (fn game-over? [ball]
   "Has the ball contacted the top of the screen?"
-  (= 0 ball.y))
+  (= 0 (+ 2 ball.y)))
 
 (fn _G.TIC []
-  (let [rows (->> state.rows (maybe-spawn-row state.t state.spawn-rate) cull-last-row raise-rows)
+  (let [rows (->> state.rows
+                  (maybe-spawn-row state.t state.spawn-rate)
+                  cull-last-row
+                  raise-rows)
         ball (->> state.ball (maybe-gravity rows) move)]
     (tset state :ball ball)
     (tset state :rows rows)
     (draw ball rows)
     (print (string.format "Rows: %d" (length state.rows)))
     (when (game-over? ball)
-      (trace "Game over!")
+      (trace (string.format "Game over! Score: %d" state.t))
       (exit)))
   (tset state :t (+ 1 state.t)))
 
