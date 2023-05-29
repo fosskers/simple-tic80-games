@@ -83,6 +83,24 @@
     (tset row :y (- row.y gravity-rate)))
   rows)
 
+;; TODO Account for the walls again.
+
+(fn left-yoyu [row ball]
+  "How many pixels could the ball travel left before hitting?"
+  (let [nearest (accumulate [block-r 0 i block? (ipairs row) &until (> (+ 7 (* 8 i)) ball.x)]
+                  (if (not block?) block-r
+                      (+ 7 (* i 8))))]
+    (math.min ball-rate (- ball.x nearest))))
+
+(fn right-yoyu [row ball]
+  "How many pixels could the ball travel right before hitting?"
+  (let [ball-r (+ 7 ball.x)
+        nearest (accumulate [block-l 0 i block? (ipairs row) &until (>= block-l ball-r)]
+                  (if (not block?) block-l
+                      (+ 7 (* i 8))))]
+    (if (< nearest ball-r) 0
+        (math.min ball-rate (- nearest ball-r)))))
+
 (fn left-contact? [row ball]
   "Is the left side of the ball contacting a block?"
   (accumulate [contact? false i block? (ipairs row) &until contact?]
@@ -142,16 +160,14 @@
       (at-bottom? ball) ball
       (gravity ball)))
 
-(fn move-left [ball]
-  "Move the ball one pixel to the left."
-  (when (and (btn 2) (> (+ 1 ball.x) 0))
-    (tset ball :x (- ball.x ball-rate)))
+(fn move-left [ball pixels]
+  "Move the ball some pixels to the left."
+  (tset ball :x (- ball.x pixels))
   ball)
 
-(fn move-right [ball]
-  "Move the ball one pixel to the right."
-  (when (and (btn 3) (< (+ 7 ball.x) max-width))
-    (tset ball :x (+ ball.x ball-rate)))
+(fn move-right [ball pixels]
+  "Move the ball some pixels to the right."
+  (tset ball :x (+ ball.x pixels))
   ball)
 
 (fn nearby-row [rows ball]
@@ -165,11 +181,11 @@
 (fn maybe-move [rows ball]
   "Move the ball if it's not colliding horizontally with a block."
   (let [row (nearby-row rows ball)]
-    (if (and row (btn 2) (left-contact? row ball)) ball
-        (and row (btn 3) (right-contact? row ball)) ball
-        (and (btn 2) (btn 3)) ball
-        (btn 2) (move-left ball)
-        (btn 3) (move-right ball)
+    (if (and (btn 2) (btn 3)) ball
+        (and row (btn 2)) (move-left ball (left-yoyu row ball))
+        (and row (btn 3)) (move-right ball (right-yoyu row ball))
+        (btn 2) (move-left ball ball-rate)
+        (btn 3) (move-right ball ball-rate)
         ball)))
 
 (fn game-over? [ball]
