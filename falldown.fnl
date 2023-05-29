@@ -34,7 +34,7 @@
             :spawn-rate 60})
 
 (fn spawn-row []
-  "Generate a new row "
+  "Generate a new row."
   (let [row []]
     (for [i 1 max-blocks]
       (let [spawn? (~= 1 (math.random 1 (/ max-blocks 5)))]
@@ -76,6 +76,15 @@
   (each [_ row (ipairs rows)]
     (tset row :y (- row.y gravity-rate)))
   rows)
+
+(fn horizontal-contact? [row ball]
+  "Is the ball horizontally contacting the outside of a block?"
+  (accumulate [contact? false i block? (ipairs row) &until contact?]
+    (and block?
+         (let [block-l (* (- i 1) 8)
+               block-r (* (+ 7 block-l))]
+           (or (= block-r ball.x)
+               (= block-l (+ 7 ball.x)))))))
 
 (fn horizontal-overlap? [row ball]
   "Is the ball within the x-range of any present blocks?"
@@ -129,6 +138,17 @@
     (tset ball :x (+ ball.x ball-rate)))
   ball)
 
+(fn horizontal-contacts? [rows ball]
+  "If the ball contacting any blocks horizontally?"
+  (accumulate [colliding? false _ {:y y :blocks row} (ipairs rows) &until colliding?]
+    (and (<= y (+ 7 ball.y) (+ 7 y))
+         (horizontal-contact? row ball))))
+
+(fn maybe-move [rows ball]
+  "Move the ball if it's not colliding horizontally with a block."
+  (if (horizontal-contacts? rows ball) ball
+      (move ball)))
+
 (fn game-over? [ball]
   "Has the ball contacted the top of the screen?"
   (= 0 (+ 2 ball.y)))
@@ -138,7 +158,7 @@
                   (maybe-spawn-row state.t state.spawn-rate)
                   cull-last-row
                   raise-rows)
-        ball (->> state.ball (maybe-gravity rows) move)]
+        ball (->> state.ball (maybe-gravity rows) (maybe-move rows))]
     (tset state :ball ball)
     (tset state :rows rows)
     (draw ball rows)
