@@ -161,6 +161,7 @@
   (let [row (nearby-row rows ball)]
     (if (and row (btn 2) (left-contact? row ball)) ball
         (and row (btn 3) (right-contact? row ball)) ball
+        (and (btn 2) (btn 3)) ball
         (btn 2) (move-left ball)
         (btn 3) (move-right ball)
         ball)))
@@ -180,7 +181,6 @@
     (tset state :ball ball)
     (tset state :rows rows)
     (draw ball rows)
-    (print (string.format "Rows: %d" (length state.rows)))
     (when (game-over? ball)
       (trace (string.format "Game over! Score: %d" state.t))
       (exit)))
