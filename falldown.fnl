@@ -77,14 +77,20 @@
     (tset row :y (- row.y gravity-rate)))
   rows)
 
-(fn horizontal-contact? [row ball]
-  "Is the ball horizontally contacting the outside of a block?"
+(fn left-contact? [row ball]
+  "Is the left side of the ball contacting a block?"
   (accumulate [contact? false i block? (ipairs row) &until contact?]
     (and block?
          (let [block-l (* (- i 1) 8)
                block-r (* (+ 7 block-l))]
-           (or (= block-r ball.x)
-               (= block-l (+ 7 ball.x)))))))
+           (or (= block-r ball.x))))))
+
+(fn right-contact? [row ball]
+  "Is the right side of the ball contacting a block?"
+  (accumulate [contact? false i block? (ipairs row) &until contact?]
+    (and block?
+         (let [block-l (* (- i 1) 8)]
+           (or (= block-l (+ 7 ball.x)))))))
 
 (fn horizontal-overlap? [row ball]
   "Is the ball within the x-range of any present blocks?"
@@ -130,28 +136,40 @@
       (at-bottom? ball) ball
       (gravity ball)))
 
-(fn move [ball]
-  "Move the ball if a button is pressed."
+(fn move-left [ball]
+  "Move the ball one pixel to the left."
   (when (and (btn 2) (> (+ 1 ball.x) 0))
     (tset ball :x (- ball.x ball-rate)))
+  ball)
+
+(fn move-right [ball]
+  "Move the ball one pixel to the right."
   (when (and (btn 3) (< (+ 7 ball.x) max-width))
     (tset ball :x (+ ball.x ball-rate)))
   ball)
 
-(fn horizontal-contacts? [rows ball]
-  "If the ball contacting any blocks horizontally?"
-  (accumulate [colliding? false _ {:y y :blocks row} (ipairs rows) &until colliding?]
-    (and (<= y (+ 7 ball.y) (+ 7 y))
-         (horizontal-contact? row ball))))
+(fn nearby-row [rows ball]
+  "Simply, is the ball within the y-range of a row? Yields the nearby row."
+  (accumulate [within? false _ {:y y :blocks row} (ipairs rows) &until within?]
+    (if (or (<= y (+ 7 ball.y) (+ 7 y))
+            (<= y (+ 2 ball.y) (+ 7 y)))
+        row
+        false)))
 
 (fn maybe-move [rows ball]
   "Move the ball if it's not colliding horizontally with a block."
-  (if (horizontal-contacts? rows ball) ball
-      (move ball)))
+  (let [row (nearby-row rows ball)]
+    (if (and row (btn 2) (left-contact? row ball)) ball
+        (and row (btn 3) (right-contact? row ball)) ball
+        (btn 2) (move-left ball)
+        (btn 3) (move-right ball)
+        ball)))
 
 (fn game-over? [ball]
   "Has the ball contacted the top of the screen?"
   (= 0 (+ 2 ball.y)))
+
+;; TODO Less ad hoc determination of the edges of the ball.
 
 (fn _G.TIC []
   (let [rows (->> state.rows
