@@ -110,10 +110,15 @@
   (tset ball :y (- ball.y gravity-rate))
   ball)
 
+(fn at-bottom? [ball]
+  "Is the ball at the bottom of the screen?"
+  (>= (+ 8 ball.y) max-height))
+
 (fn maybe-gravity [rows ball]
   "Apply gravity if there's no downward collision."
   (if (colliding-down? rows ball) ball
       (overlapping-down? rows ball) (raise-ball ball)
+      (at-bottom? ball) ball
       (gravity ball)))
 
 (fn move [ball]
