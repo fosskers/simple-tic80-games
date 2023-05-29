@@ -31,7 +31,8 @@
 (var state {:t 0
             :ball {:x (- 120 3) :y 1}
             :rows []
-            :spawn-rate 30})
+            :spawn-rate-max 60
+            :spawn-rate-curr 0})
 
 (fn spawn-row []
   "Generate a new row."
@@ -41,9 +42,9 @@
         (table.insert row spawn?)))
     {:y max-height :blocks row}))
 
-(fn maybe-spawn-row [t spawn-rate rows]
+(fn maybe-spawn-row [spawn-rate rows]
   "Spawn a new row if we're on the correct tick."
-  (when (= 0 (% t spawn-rate))
+  (when (= 0 spawn-rate)
     (table.insert rows 1 (spawn-row)))
   rows)
 
@@ -178,21 +179,28 @@
 ;; TODO Less ad hoc determination of the edges of the ball.
 
 (fn _G.TIC []
-  ;; (when (oldest-row-off-screen? state.rows)
-  ;;   (tset state :spawn-rate (- state.spawn-rate 1)))
   (let [rows (->> state.rows
-                  (maybe-spawn-row state.t state.spawn-rate)
+                  (maybe-spawn-row state.spawn-rate-curr)
                   cull-last-row
                   raise-rows)
         ball (->> state.ball (maybe-gravity rows) (maybe-move rows))]
     (tset state :ball ball)
     (tset state :rows rows)
     (draw ball rows)
-    (print (string.format "Spawn Rate: %d" state.spawn-rate))
+    (print (string.format "Spawn Rate: %d" state.spawn-rate-curr))
     (when (game-over? ball)
       (trace (string.format "Game over! Score: %d" state.t))
       (exit)))
+  ;; Adjust the spawn rate if necessary.
+  (if (= 0 state.spawn-rate-curr)
+      (do (tset state :spawn-rate-max (math.max 16 (- state.spawn-rate-max 1)))
+          (tset state :spawn-rate-curr state.spawn-rate-max))
+      (tset state :spawn-rate-curr (- state.spawn-rate-curr 1)))
   (tset state :t (+ 1 state.t)))
+
+(let [foo {:y {:x 1}}]
+  (set foo.y.x 2)
+  foo)
 
 ;; <TILES>
 ;; 001:c555555655555556555555565555555655555557555555675555566766667777
