@@ -31,7 +31,7 @@
 (var state {:t 0
             :ball {:x (- 120 3) :y 1}
             :rows []
-            :spawn-rate 60})
+            :spawn-rate 30})
 
 (fn spawn-row []
   "Generate a new row."
