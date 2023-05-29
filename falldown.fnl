@@ -83,7 +83,15 @@
     (tset row :y (- row.y gravity-rate)))
   rows)
 
-;; TODO Account for the walls again.
+(fn left-yoyu-to-wall [ball]
+  "How many pixels could the ball travel left before hitting the wall?"
+  (let [distance (+ 1 ball.x)]
+    (math.min ball-rate distance)))
+
+(fn right-yoyu-to-wall [ball]
+  "How many pixels could the ball travel right before hitting the wall?"
+  (let [distance (- max-width (+ 7 ball.x))]
+    (math.min ball-rate distance)))
 
 (fn left-yoyu [row ball]
   "How many pixels could the ball travel left before hitting?"
@@ -184,8 +192,8 @@
     (if (and (btn 2) (btn 3)) ball
         (and row (btn 2)) (move-left ball (left-yoyu row ball))
         (and row (btn 3)) (move-right ball (right-yoyu row ball))
-        (btn 2) (move-left ball ball-rate)
-        (btn 3) (move-right ball ball-rate)
+        (btn 2) (move-left ball (left-yoyu-to-wall ball))
+        (btn 3) (move-right ball (right-yoyu-to-wall ball))
         ball)))
 
 (fn game-over? [ball]
