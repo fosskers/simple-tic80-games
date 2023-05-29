@@ -47,11 +47,16 @@
     (table.insert rows 1 (spawn-row)))
   rows)
 
+(fn oldest-row-off-screen? [rows]
+  "Has the oldest block row moved off the top of the screen?"
+  (and (> (length rows) 0)
+       (let [y (. (. rows (length rows)) :y)]
+         (<= (+ 7 y) 0))))
+
 (fn cull-last-row [rows]
   "Potentially delete the oldest row, if it has moved past the top of the screen."
-  (let [y (. (. rows (length rows)) :y)]
-    (when (<= (+ 7 y) 0)
-      (table.remove rows (length rows))))
+  (when (oldest-row-off-screen? rows)
+    (table.remove rows (length rows)))
   rows)
 
 (fn draw-row [{:y y :blocks row}]
@@ -173,6 +178,8 @@
 ;; TODO Less ad hoc determination of the edges of the ball.
 
 (fn _G.TIC []
+  ;; (when (oldest-row-off-screen? state.rows)
+  ;;   (tset state :spawn-rate (- state.spawn-rate 1)))
   (let [rows (->> state.rows
                   (maybe-spawn-row state.t state.spawn-rate)
                   cull-last-row
@@ -181,6 +188,7 @@
     (tset state :ball ball)
     (tset state :rows rows)
     (draw ball rows)
+    (print (string.format "Spawn Rate: %d" state.spawn-rate))
     (when (game-over? ball)
       (trace (string.format "Game over! Score: %d" state.t))
       (exit)))
