@@ -13,7 +13,7 @@
 ;; The index of the background colour.
 (local background 13)
 ;; The left-right movement speed of the ball.
-(local ball-rate 2)
+(local ball-rate 3)
 ;; The downward pull of gravity.
 (local gravity-rate 1)
 ;; The maximum width of the screen.
@@ -89,14 +89,14 @@
     (and block?
          (let [block-l (* (- i 1) 8)
                block-r (* (+ 7 block-l))]
-           (or (= block-r ball.x))))))
+           (<= (+ ball.x ball-rate) block-r)))))
 
 (fn right-contact? [row ball]
   "Is the right side of the ball contacting a block?"
   (accumulate [contact? false i block? (ipairs row) &until contact?]
     (and block?
          (let [block-l (* (- i 1) 8)]
-           (or (= block-l (+ 7 ball.x)))))))
+           (>= (+ 7 ball.x ball-rate) block-l)))))
 
 (fn horizontal-overlap? [row ball]
   "Is the ball within the x-range of any present blocks?"
