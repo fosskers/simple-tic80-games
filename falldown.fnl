@@ -184,10 +184,10 @@
     (and (< y (+ ball.y 8) (+ 7 y))
          (horizontal-overlap? row ball))))
 
-(fn gravity [ball]
-  "Drop the ball."
-  (tset ball :y (+ ball.y gravity-rate))
-  ball)
+;; (fn gravity [ball]
+;;   "Drop the ball."
+;;   (tset ball :y (+ ball.y gravity-rate))
+;;   ball)
 
 (fn raise-ball [ball]
   "Collision has occurred and the ball must be raised."
@@ -198,22 +198,22 @@
   "Is the ball at the bottom of the screen?"
   (>= (+ 8 ball.y) max-height))
 
-(fn maybe-gravity [rows ball]
-  "Apply gravity if there's no downward collision."
-  (if (colliding-down? rows ball) ball
-      (overlapping-down? rows ball) (raise-ball ball)
-      (at-bottom? ball) ball
-      (gravity ball)))
+;; (fn maybe-gravity [rows ball]
+;;   "Apply gravity if there's no downward collision."
+;;   (if (colliding-down? rows ball) ball
+;;       (overlapping-down? rows ball) (raise-ball ball)
+;;       (at-bottom? ball) ball
+;;       (gravity ball)))
 
-(fn move-left [ball pixels]
-  "Move the ball some pixels to the left."
-  (tset ball :x (- ball.x pixels))
-  ball)
+;; (fn move-left [ball pixels]
+;;   "Move the ball some pixels to the left."
+;;   (tset ball :x (- ball.x pixels))
+;;   ball)
 
-(fn move-right [ball pixels]
-  "Move the ball some pixels to the right."
-  (tset ball :x (+ ball.x pixels))
-  ball)
+;; (fn move-right [ball pixels]
+;;   "Move the ball some pixels to the right."
+;;   (tset ball :x (+ ball.x pixels))
+;;   ball)
 
 (fn nearby-row [rows ball]
   "Simply, is the ball within the y-range of a row? Yields the nearby row."
@@ -223,41 +223,51 @@
         row
         false)))
 
-(fn move [ball]
-  "Move the ball according to user input."
-  (if (and (btn 2) (btn 3)) ball
-      (btn 2) (move-left ball ball-rate)
-      (btn 3) (move-right ball ball-rate)
-      ball))
+(fn movement-vector [left? right?]
+  "A vector to move the ball in, depending on the user input."
+  (let [y gravity-rate
+        x (if (and left? right?) 0
+              left? (* -1 ball-rate)
+              right? ball-rate
+              0)]
+    {:x x :y y}))
 
-(fn maybe-move [rows ball]
-  "Move the ball if it's not colliding horizontally with a block."
-  (let [row (nearby-row rows ball)]
-    (if (and (btn 2) (btn 3)) ball
-        (and row (btn 2)) (move-left ball (left-yoyu-to-block row ball))
-        (and row (btn 3)) (move-right ball (right-yoyu-to-block row ball))
-        (btn 2) (move-left ball (left-yoyu-to-wall ball))
-        (btn 3) (move-right ball (right-yoyu-to-wall ball))
-        ball)))
+(fn move [mvec ball]
+  "Move the ball according to the given movement vector."
+  {:x (+ ball.x mvec.x) :y (+ ball.y mvec.y)})
+
+;; (fn maybe-move [rows ball]
+;;   "Move the ball if it's not colliding horizontally with a block."
+;;   (let [row (nearby-row rows ball)]
+;;     (if (and (btn 2) (btn 3)) ball
+;;         (and row (btn 2)) (move-left ball (left-yoyu-to-block row ball))
+;;         (and row (btn 3)) (move-right ball (right-yoyu-to-block row ball))
+;;         (btn 2) (move-left ball (left-yoyu-to-wall ball))
+;;         (btn 3) (move-right ball (right-yoyu-to-wall ball))
+;;         ball)))
 
 (fn game-over? [ball]
   "Has the ball contacted the top of the screen?"
   (= 0 (+ 2 ball.y)))
 
-(fn fix-collision [rows ball]
+(fn reposition [rows ball]
   "Reposition the ball if collisions are occuring."
-  ball)
+  (let [bounds (ball-bounds ball.x ball.y)]
+    ball))
 
 ;; TODO Less ad hoc determination of the edges of the ball.
 
 (fn _G.TIC []
   (when (not state.paused)
     ;; --- Physics --- ;;
-    (let [rows (->> state.rows
+    (let [left?  (btn 2)
+          right? (btn 3)
+          mvec   (movement-vector left? right?)
+          rows (->> state.rows
                     (maybe-spawn-row state.spawn-rate-curr)
                     cull-last-row
                     raise-rows)
-          ball (->> state.ball gravity move (fix-collision rows))]
+          ball (->> state.ball (move mvec) (reposition rows))]
       (tset state :ball ball)
       (tset state :rows rows)
       (tset state :ball-bounds (ball-bounds ball.x ball.y))
