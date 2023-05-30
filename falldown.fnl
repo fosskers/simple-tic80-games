@@ -223,6 +223,13 @@
         row
         false)))
 
+(fn move [ball]
+  "Move the ball according to user input."
+  (if (and (btn 2) (btn 3)) ball
+      (btn 2) (move-left ball ball-rate)
+      (btn 3) (move-right ball ball-rate)
+      ball))
+
 (fn maybe-move [rows ball]
   "Move the ball if it's not colliding horizontally with a block."
   (let [row (nearby-row rows ball)]
@@ -237,31 +244,38 @@
   "Has the ball contacted the top of the screen?"
   (= 0 (+ 2 ball.y)))
 
+(fn fix-collision [rows ball]
+  "Reposition the ball if collisions are occuring."
+  ball)
+
 ;; TODO Less ad hoc determination of the edges of the ball.
 
 (fn _G.TIC []
   (when (not state.paused)
+    ;; --- Physics --- ;;
     (let [rows (->> state.rows
                     (maybe-spawn-row state.spawn-rate-curr)
                     cull-last-row
                     raise-rows)
-          ball (->> state.ball (maybe-gravity rows) (maybe-move rows))]
+          ball (->> state.ball gravity move (fix-collision rows))]
       (tset state :ball ball)
       (tset state :rows rows)
       (tset state :ball-bounds (ball-bounds ball.x ball.y))
+      ;; --- Rendering --- ;;
       (draw ball rows)
-      ;; (dbg-draw-bbox state.ball-bounds)
+      (dbg-draw-bbox state.ball-bounds)
       (print (string.format "Spawn Rate: %d" state.spawn-rate-curr))
+      ;; --- Game over check --- ;;
       (when (game-over? ball)
         (trace (string.format "Game over! Score: %d" state.t))
-        (exit))))
-  ;; Adjust the block spawn rate if necessary.
-  (if (= 0 state.spawn-rate-curr)
-      (do (tset state :spawn-rate-max (math.max 16 (- state.spawn-rate-max 1)))
-          (tset state :spawn-rate-curr state.spawn-rate-max))
-      (tset state :spawn-rate-curr (- state.spawn-rate-curr 1)))
+        (exit)))
+    ;; Adjust the block spawn rate if necessary.
+    (if (= 0 state.spawn-rate-curr)
+        (do (tset state :spawn-rate-max (math.max 16 (- state.spawn-rate-max 1)))
+            (tset state :spawn-rate-curr state.spawn-rate-max))
+        (tset state :spawn-rate-curr (- state.spawn-rate-curr 1))))
   ;; Have they paused or unpaused the game?
-  (when (btn 4)
+  (when (key 48)
     (tset state :paused (not state.paused)))
   ;; The slow, steady march of time.
   (tset state :t (+ 1 state.t)))
