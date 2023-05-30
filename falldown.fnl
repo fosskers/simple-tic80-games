@@ -28,27 +28,37 @@
 (local block-sprite 1)
 ;; The neutral bounding polygon of the ball.
 (local ball-neutral-bbox
-       [{:x 2 :y 1}
-        {:x 3 :y 1}
-        {:x 4 :y 1}
-        {:x 5 :y 1}
+       [{:x 2 :y 1} {:x 3 :y 1} {:x 4 :y 1} {:x 5 :y 1}
+        {:x 1 :y 2} {:x 6 :y 2}
+        {:x 1 :y 3} {:x 6 :y 3}
+        {:x 1 :y 4} {:x 6 :y 4}
+        {:x 1 :y 5} {:x 6 :y 5}
+        {:x 2 :y 6} {:x 3 :y 6} {:x 4 :y 6} {:x 5 :y 6}])
+(local block-neutral-bbox
+       [{:x 0 :y 0}
+        {:x 1 :y 0}
+        {:x 2 :y 0}
+        {:x 3 :y 0}
+        {:x 4 :y 0}
+        {:x 5 :y 0}
+        {:x 6 :y 0}
+        {:x 7 :y 0}
         ;; --- ;;
-        {:x 1 :y 2}
-        {:x 6 :y 2}
+        {:x 0 :y 1} {:x 7 :y 1}
+        {:x 0 :y 2} {:x 7 :y 2}
+        {:x 0 :y 3} {:x 7 :y 3}
+        {:x 0 :y 4} {:x 7 :y 4}
+        {:x 0 :y 5} {:x 7 :y 5}
+        {:x 0 :y 6} {:x 7 :y 6}
         ;; --- ;;
-        {:x 1 :y 3}
-        {:x 6 :y 3}
-        ;; --- ;;
-        {:x 1 :y 4}
-        {:x 6 :y 4}
-        ;; --- ;;
-        {:x 1 :y 5}
-        {:x 6 :y 5}
-        ;; --- ;;
-        {:x 2 :y 6}
-        {:x 3 :y 6}
-        {:x 4 :y 6}
-        {:x 5 :y 6}])
+        {:x 0 :y 7}
+        {:x 1 :y 7}
+        {:x 2 :y 7}
+        {:x 3 :y 7}
+        {:x 4 :y 7}
+        {:x 5 :y 7}
+        {:x 6 :y 7}
+        {:x 7 :y 7}])
 
 ;; The current state of the game.
 (var state {:t 0
@@ -64,6 +74,12 @@
   (let [red 2]
     (each [_ {:x x :y y} (ipairs bbox)]
       (pix x y red))))
+
+(fn block-bounds [screen-x screen-y]
+  "Yield a bounding polygon of a block, given the top-left XY coordinates of
+ its sprite."
+ (icollect [_ {:x x :y y} (ipairs block-neutral-bbox)]
+   {:x (+ x screen-x) :y (+ y screen-y)}))
 
 (fn ball-bounds [screen-x screen-y]
   "Yield a bounding polygon of the ball, given the top-left XY coordinates of
@@ -215,6 +231,23 @@
 ;;   (tset ball :x (+ ball.x pixels))
 ;;   ball)
 
+(fn bounding-rectangle [poly]
+  "Yield the min/max X and Y values of some polygon."
+  (accumulate [{: x-min : x-max : y-min : y-max}
+               {:x-min math.maxinteger :x-max math.mininteger :y-min math.maxinteger :y-max math.mininteger}
+               _ {: x : y} (ipairs poly)]
+    {:x-min (math.min x-min x)
+     :x-max (math.max x-max x)
+     :y-min (math.min y-min y)
+     :y-max (math.max y-max y)}))
+
+(fn overlap? [a b]
+  "Are two bounding polygons overlapping somewhere?"
+  (let [{: x-min : x-max : y-min : y-max} (bounding-rectangle b)]
+    (accumulate [overlapping? false _ {:x x :y y} (ipairs a) &until overlapping?]
+      (and (<= x-min x x-max)
+           (<= y-min y y-max)))))
+
 (fn nearby-row [rows ball]
   "Simply, is the ball within the y-range of a row? Yields the nearby row."
   (accumulate [within? false _ {:y y :blocks row} (ipairs rows) &until within?]
@@ -250,10 +283,18 @@
   "Has the ball contacted the top of the screen?"
   (= 0 (+ 2 ball.y)))
 
+(fn dbg-detection [rows ball]
+  (let [ba-bounds (ball-bounds ball.x ball.y)]
+    (each [_ {:y y :blocks row} (ipairs rows)]
+      (each [i block? (ipairs row)]
+        (when block?
+          (let [bl-bounds (block-bounds (* i 8) y)]
+            (when (overlap? ba-bounds bl-bounds)
+              (dbg-draw-bbox bl-bounds))))))))
+
 (fn reposition [rows ball]
   "Reposition the ball if collisions are occuring."
-  (let [bounds (ball-bounds ball.x ball.y)]
-    ball))
+  ball)
 
 ;; TODO Less ad hoc determination of the edges of the ball.
 
@@ -274,6 +315,7 @@
       ;; --- Rendering --- ;;
       (draw ball rows)
       (dbg-draw-bbox state.ball-bounds)
+      (dbg-detection rows ball)
       (print (string.format "Spawn Rate: %d" state.spawn-rate-curr))
       ;; --- Game over check --- ;;
       (when (game-over? ball)
