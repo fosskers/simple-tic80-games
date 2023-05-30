@@ -93,21 +93,21 @@
   (let [distance (- max-width (+ 7 ball.x))]
     (math.min ball-rate distance)))
 
-(fn left-yoyu [row ball]
+(fn left-yoyu-to-block [row ball]
   "How many pixels could the ball travel left before hitting?"
   (let [nearest (accumulate [block-r 0 i block? (ipairs row) &until (> (+ 7 (* 8 i)) ball.x)]
                   (if (not block?) block-r
                       (+ 7 (* i 8))))]
     (math.min ball-rate (- ball.x nearest))))
 
-(fn right-yoyu [row ball]
+(fn right-yoyu-to-block [row ball]
   "How many pixels could the ball travel right before hitting?"
-  (let [ball-r (+ 7 ball.x)
-        nearest (accumulate [block-l 0 i block? (ipairs row) &until (>= block-l ball-r)]
+  (let [ball-r (+ 6 ball.x)
+        nearest (accumulate [block-l 0 i block? (ipairs row) &until (> block-l ball-r)]
                   (if (not block?) block-l
-                      (+ 7 (* i 8))))]
-    (if (< nearest ball-r) 0
-        (math.min ball-rate (- nearest ball-r)))))
+                      (* i 8)))
+        distance (- nearest ball-r)]
+    (math.min ball-rate distance)))
 
 (fn left-contact? [row ball]
   "Is the left side of the ball contacting a block?"
@@ -190,8 +190,8 @@
   "Move the ball if it's not colliding horizontally with a block."
   (let [row (nearby-row rows ball)]
     (if (and (btn 2) (btn 3)) ball
-        (and row (btn 2)) (move-left ball (left-yoyu row ball))
-        (and row (btn 3)) (move-right ball (right-yoyu row ball))
+        (and row (btn 2)) (move-left ball (left-yoyu-to-block row ball))
+        (and row (btn 3)) (move-right ball (right-yoyu-to-block row ball))
         (btn 2) (move-left ball (left-yoyu-to-wall ball))
         (btn 3) (move-right ball (right-yoyu-to-wall ball))
         ball)))
