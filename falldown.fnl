@@ -26,13 +26,50 @@
 (local ball-sprite 257)
 ;; The index of the block sprite.
 (local block-sprite 1)
+;; The neutral bounding polygon of the ball.
+(local ball-neutral-bbox
+       [{:x 2 :y 1}
+        {:x 3 :y 1}
+        {:x 4 :y 1}
+        {:x 5 :y 1}
+        ;; --- ;;
+        {:x 1 :y 2}
+        {:x 6 :y 2}
+        ;; --- ;;
+        {:x 1 :y 3}
+        {:x 6 :y 3}
+        ;; --- ;;
+        {:x 1 :y 4}
+        {:x 6 :y 4}
+        ;; --- ;;
+        {:x 1 :y 5}
+        {:x 6 :y 5}
+        ;; --- ;;
+        {:x 2 :y 6}
+        {:x 3 :y 6}
+        {:x 4 :y 6}
+        {:x 5 :y 6}])
 
 ;; The current state of the game.
 (var state {:t 0
             :ball {:x (- 120 3) :y 1}
+            :ball-bounds []
             :rows []
             :spawn-rate-max 60
-            :spawn-rate-curr 0})
+            :spawn-rate-curr 0
+            :paused false})
+
+(fn dbg-draw-bbox [bbox]
+  "Draw a given bounding polygon."
+  (let [red 2]
+    (each [_ {:x x :y y} (ipairs bbox)]
+      (pix x y red))))
+
+(fn ball-bounds [screen-x screen-y]
+  "Yield a bounding polygon of the ball, given the top-left XY coordinates of
+ its sprite."
+ (icollect [_ {:x x :y y} (ipairs ball-neutral-bbox)]
+   {:x (+ x screen-x) :y (+ y screen-y)}))
 
 (fn spawn-row []
   "Generate a new row."
@@ -203,35 +240,38 @@
 ;; TODO Less ad hoc determination of the edges of the ball.
 
 (fn _G.TIC []
-  (let [rows (->> state.rows
-                  (maybe-spawn-row state.spawn-rate-curr)
-                  cull-last-row
-                  raise-rows)
-        ball (->> state.ball (maybe-gravity rows) (maybe-move rows))]
-    (tset state :ball ball)
-    (tset state :rows rows)
-    (draw ball rows)
-    (print (string.format "Spawn Rate: %d" state.spawn-rate-curr))
-    (when (game-over? ball)
-      (trace (string.format "Game over! Score: %d" state.t))
-      (exit)))
-  ;; Adjust the spawn rate if necessary.
+  (when (not state.paused)
+    (let [rows (->> state.rows
+                    (maybe-spawn-row state.spawn-rate-curr)
+                    cull-last-row
+                    raise-rows)
+          ball (->> state.ball (maybe-gravity rows) (maybe-move rows))]
+      (tset state :ball ball)
+      (tset state :rows rows)
+      (tset state :ball-bounds (ball-bounds ball.x ball.y))
+      (draw ball rows)
+      ;; (dbg-draw-bbox state.ball-bounds)
+      (print (string.format "Spawn Rate: %d" state.spawn-rate-curr))
+      (when (game-over? ball)
+        (trace (string.format "Game over! Score: %d" state.t))
+        (exit))))
+  ;; Adjust the block spawn rate if necessary.
   (if (= 0 state.spawn-rate-curr)
       (do (tset state :spawn-rate-max (math.max 16 (- state.spawn-rate-max 1)))
           (tset state :spawn-rate-curr state.spawn-rate-max))
       (tset state :spawn-rate-curr (- state.spawn-rate-curr 1)))
+  ;; Have they paused or unpaused the game?
+  (when (btn 4)
+    (tset state :paused (not state.paused)))
+  ;; The slow, steady march of time.
   (tset state :t (+ 1 state.t)))
-
-(let [foo {:y {:x 1}}]
-  (set foo.y.x 2)
-  foo)
 
 ;; <TILES>
 ;; 001:c555555655555556555555565555555655555557555555675555566766667777
 ;; </TILES>
 
 ;; <SPRITES>
-;; 001:000000000000000000caaa000c09a0900a900a900aa009800a0a908000998800
+;; 001:0000000000caaa000c09a0900a900a900aa009800a0a90800099880000000000
 ;; </SPRITES>
 
 ;; <WAVES>
