@@ -284,13 +284,16 @@
   (= 0 (+ 2 ball.y)))
 
 (fn dbg-detection [rows ball]
+  (var collisions 0)
   (let [ba-bounds (ball-bounds ball.x ball.y)]
     (each [_ {:y y :blocks row} (ipairs rows)]
       (each [i block? (ipairs row)]
         (when block?
           (let [bl-bounds (block-bounds (* i 8) y)]
             (when (overlap? ba-bounds bl-bounds)
-              (dbg-draw-bbox bl-bounds))))))))
+              (set collisions (+ 1 collisions))
+              (dbg-draw-bbox bl-bounds)))))))
+  (print (string.format "Collisions: %d" collisions)))
 
 (fn reposition [rows ball]
   "Reposition the ball if collisions are occuring."
@@ -299,7 +302,8 @@
 ;; TODO Less ad hoc determination of the edges of the ball.
 
 (fn _G.TIC []
-  (when (not state.paused)
+  (when (or (not state.paused)
+            (btn 1))
     ;; --- Physics --- ;;
     (let [left?  (btn 2)
           right? (btn 3)
@@ -316,7 +320,7 @@
       (draw ball rows)
       (dbg-draw-bbox state.ball-bounds)
       (dbg-detection rows ball)
-      (print (string.format "Spawn Rate: %d" state.spawn-rate-curr))
+      ;; (print (string.format "Spawn Rate: %d" state.spawn-rate-curr))
       ;; --- Game over check --- ;;
       (when (game-over? ball)
         (trace (string.format "Game over! Score: %d" state.t))
@@ -327,7 +331,7 @@
             (tset state :spawn-rate-curr state.spawn-rate-max))
         (tset state :spawn-rate-curr (- state.spawn-rate-curr 1))))
   ;; Have they paused or unpaused the game?
-  (when (key 48)
+  (when (key 16)
     (tset state :paused (not state.paused)))
   ;; The slow, steady march of time.
   (tset state :t (+ 1 state.t)))
