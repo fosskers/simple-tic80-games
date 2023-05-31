@@ -289,7 +289,7 @@
     (each [_ {:y y :blocks row} (ipairs rows)]
       (each [i block? (ipairs row)]
         (when block?
-          (let [bl-bounds (block-bounds (* i 8) y)]
+          (let [bl-bounds (block-bounds (* (- i 1) 8) y)]
             (when (overlap? ba-bounds bl-bounds)
               (set collisions (+ 1 collisions))
               (dbg-draw-bbox bl-bounds)))))))
