@@ -233,13 +233,12 @@
 
 (fn bounding-rectangle [poly]
   "Yield the min/max X and Y values of some polygon."
-  (accumulate [{: x-min : x-max : y-min : y-max}
-               {:x-min math.maxinteger :x-max math.mininteger :y-min math.maxinteger :y-max math.mininteger}
-               _ {: x : y} (ipairs poly)]
-    {:x-min (math.min x-min x)
-     :x-max (math.max x-max x)
-     :y-min (math.min y-min y)
-     :y-max (math.max y-max y)}))
+  (let [init {:x-min math.maxinteger :x-max math.mininteger :y-min math.maxinteger :y-max math.mininteger}]
+    (accumulate [{: x-min : x-max : y-min : y-max} init _ {: x : y} (ipairs poly)]
+      {:x-min (math.min x-min x)
+       :x-max (math.max x-max x)
+       :y-min (math.min y-min y)
+       :y-max (math.max y-max y)})))
 
 (fn overlap? [a b]
   "Are two bounding polygons overlapping somewhere?"
@@ -283,7 +282,12 @@
   "Has the ball contacted the top of the screen?"
   (= 0 (+ 2 ball.y)))
 
+(fn dbg-mvec [mvec]
+  "Display the current movement vector of the ball."
+  (print (string.format "{:x %d :y %d}" mvec.x mvec.y) 0 8))
+
 (fn dbg-detection [rows ball]
+  "Display bounding polygons of blocks that the ball is contacting during this frame."
   (var collisions 0)
   (let [ba-bounds (ball-bounds ball.x ball.y)]
     (each [_ {:y y :blocks row} (ipairs rows)]
@@ -295,11 +299,35 @@
               (dbg-draw-bbox bl-bounds)))))))
   (print (string.format "Collisions: %d" collisions)))
 
-(fn reposition [rows ball]
-  "Reposition the ball if collisions are occuring."
-  ball)
+(fn reflect [ball block {:x dx :y dy}]
+  "Given the bounding polygon of a moving object, that of a solid object it's
+  contacting, and the movement vector that got the moving object there, product
+  a reflection vector by which to adjust the moving object's bounding polygon so
+  that it is no longer in contact."
+  (let [ball-lowest (accumulate [max-y math.mininteger _ {:y y} (ipairs ball)]
+                      (math.max max-y y))
+        block-highest (accumulate [min-y math.maxinteger _ {:y y} (ipairs block)]
+                        (math.min min-y y))]
+    {:y (* -1 (+ 1 (math.abs (- ball-lowest block-highest))))
+     :x 0}))
 
-;; TODO Less ad hoc determination of the edges of the ball.
+(fn colliding-block [rows ba-bounds]
+  "The bounding polygon of the first block hit by the ball."
+  (accumulate [poly nil _ {:y y :blocks row} (ipairs rows) &until poly]
+    (accumulate [poly nil i block? (ipairs row) &until poly]
+      (when block?
+        (let [bl-bounds (block-bounds (* (- i 1) 8) y)]
+          (when (overlap? ba-bounds bl-bounds)
+            bl-bounds))))))
+
+(fn reposition [rows mvec ball]
+  "Reposition the ball if collisions are occuring."
+  (let [ba-bounds (ball-bounds ball.x ball.y)
+        bl-bounds (colliding-block rows ba-bounds)]
+    (if (not bl-bounds) ball
+        (let [{:x x :y y} (reflect ba-bounds bl-bounds mvec)]
+          {:x (+ ball.x x)
+           :y (+ ball.y y)}))))
 
 (fn _G.TIC []
   (when (or (not state.paused)
@@ -312,7 +340,7 @@
                     (maybe-spawn-row state.spawn-rate-curr)
                     cull-last-row
                     raise-rows)
-          ball (->> state.ball (move mvec) (reposition rows))]
+          ball (->> state.ball (move mvec) (reposition rows mvec))]
       (tset state :ball ball)
       (tset state :rows rows)
       (tset state :ball-bounds (ball-bounds ball.x ball.y))
@@ -320,6 +348,7 @@
       (draw ball rows)
       (dbg-draw-bbox state.ball-bounds)
       (dbg-detection rows ball)
+      (dbg-mvec mvec)
       ;; (print (string.format "Spawn Rate: %d" state.spawn-rate-curr))
       ;; --- Game over check --- ;;
       (when (game-over? ball)
