@@ -13,7 +13,7 @@
 ;; The index of the background colour.
 (local background 13)
 ;; The left-right movement speed of the ball.
-(local ball-rate 3)
+(local ball-rate 4)
 ;; The downward pull of gravity.
 (local gravity-rate 1)
 ;; The maximum width of the screen.
@@ -84,7 +84,7 @@
             :past-balls []
             :ball-bounds []
             :rows []
-            :spawn-rate-max 50
+            :spawn-rate-max 60
             :spawn-rate-curr 0
             :paused false})
 
@@ -316,20 +316,18 @@ desired movement."
             (if block?
                 (let [block (translate block-neutral-bbox {:x (* 8 (- i 1)) :y y})]
                   (if (collisions desired block)
-                      (do (table.insert acc block) acc)
+                      (do (table.insert acc 1 block) acc)
                       acc))
                 acc))))))
 
-(fn move [ball rows mvec]
+(fn adjust-for-collision [ball rows mvec]
   "Attempt to move the ball. It does this by colliding with each nearby poly to
 find the resulting actual movement vector, gradually diminishing it until all
 collisions have been made."
   (let [ball-poly (translate ball-neutral-bbox ball)  ;; Correct?
-        nearby    (nearby-polys ball-poly rows mvec)
-        actual    (accumulate [vec mvec _ poly (ipairs nearby)]
-                    (reflect ball-poly poly vec))]
-    {:x (+ ball.x actual.x)
-     :y (+ ball.y actual.y)}))
+        nearby    (nearby-polys ball-poly rows mvec)]
+    (accumulate [vec mvec _ poly (ipairs nearby)]
+      (reflect ball-poly poly vec))))
 
 (fn quick-colliding? [ball rows]
   "Is the ball colliding downwards with any blocks?"
@@ -354,8 +352,10 @@ collisions have been made."
     ;; --- Physics --- ;;
     (let [left?  (btn 2)
           right? (btn 3)
-          mvec   (movement-vector left? right?)
-          ball   (move state.ball state.rows mvec)
+          mvec   (->> (movement-vector left? right?)
+                      (adjust-for-collision state.ball state.rows))
+          ball   {:x (+ state.ball.x mvec.x)
+                  :y (+ state.ball.y mvec.y)}
           rows   (->> state.rows
                       (maybe-spawn-row state.spawn-rate-curr)
                       cull-last-row
@@ -371,6 +371,7 @@ collisions have been made."
       ;; (tset state :ball-bounds (ball-bounds ball.x ball.y))
       ;; --- Rendering --- ;;
       (draw ball state.past-balls rows)
+      (print (string.format "(%d, %d)" mvec.x mvec.y) 0 9)
       ;; (dbg-draw-bbox state.ball-bounds)
       ;; (dbg-detection rows ball)
       ;; (dbg-mvec mvec)
