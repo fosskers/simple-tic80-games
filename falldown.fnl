@@ -152,8 +152,8 @@
 (fn draw [ball past-balls rows]
   "Draw all sprites."
   (cls background)
-  (each [_ past (ipairs past-balls)]
-    (draw-ball past))
+  ;; (each [_ past (ipairs past-balls)]
+  ;;   (draw-ball past))
   (draw-ball ball)
   (each [_ row (ipairs rows)]
     (draw-row row)))
@@ -337,7 +337,7 @@ collisions have been made."
     (accumulate [colliding? false _ {:y y :blocks row} (ipairs rows) &until colliding?]
       (accumulate [colliding? false i block? (ipairs row) &until colliding?]
         (and block?
-             (= y bottom)
+             (= bottom y)
              (or (<= (* 8 (- i 1)) left  (* 8 i))
                  (<= (* 8 (- i 1)) right (* 8 i))))))))
 
@@ -352,8 +352,8 @@ collisions have been made."
     ;; --- Physics --- ;;
     (let [left?  (btn 2)
           right? (btn 3)
-          mvec   (->> (movement-vector left? right?)
-                      (adjust-for-collision state.ball state.rows))
+          desire (movement-vector left? right?)
+          mvec   (adjust-for-collision state.ball state.rows desire)
           ball   {:x (+ state.ball.x mvec.x)
                   :y (+ state.ball.y mvec.y)}
           rows   (->> state.rows
@@ -371,7 +371,9 @@ collisions have been made."
       ;; (tset state :ball-bounds (ball-bounds ball.x ball.y))
       ;; --- Rendering --- ;;
       (draw ball state.past-balls rows)
-      (print (string.format "(%d, %d)" mvec.x mvec.y) 0 9)
+      (print (string.format "D: (%d, %d)" desire.x desire.y) 0 8)
+      (print (string.format "A: (%d, %d)" mvec.x mvec.y) 0 16)
+      (print (string.format "Coll? %s" coll?) 0 24)
       ;; (dbg-draw-bbox state.ball-bounds)
       ;; (dbg-detection rows ball)
       ;; (dbg-mvec mvec)
