@@ -543,12 +543,13 @@ collisions have been made."
     (if (= 0 state.spawn-rate-curr)
         (do (tset state :spawn-rate-max (math.max 16 (- state.spawn-rate-max 1)))
             (tset state :spawn-rate-curr state.spawn-rate-max))
-        (tset state :spawn-rate-curr (- state.spawn-rate-curr 1))))
+        (tset state :spawn-rate-curr (- state.spawn-rate-curr 1)))
+    ;; The slow, steady march of time.
+    (tset state :t (+ 1 state.t))
+    (print (string.format "Score: %d" state.t)))
   ;; Have they paused or unpaused the game?
   (when (key 16)
-    (tset state :paused (not state.paused)))
-  ;; The slow, steady march of time.
-  (tset state :t (+ 1 state.t)))
+    (tset state :paused (not state.paused))))
 
 ;; <TILES>
 ;; 001:c555555655555556555555565555555655555557555555675555566766667777
