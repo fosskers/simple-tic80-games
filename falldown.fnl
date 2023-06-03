@@ -299,17 +299,34 @@
               (dbg-draw-bbox bl-bounds)))))))
   (print (string.format "Collisions: %d" collisions)))
 
-(fn reflect [ball block {:x dx :y dy}]
+(fn vertical-reflect [a b]
+  "Yield a vertical reflection vector of some object `a` contacting some object
+  `b`. It's assumed that the object `a` is coming straight down."
+  (let [a-lowest  (accumulate [max-y math.mininteger _ {: y} (ipairs a)]
+                    (math.max max-y y))
+        b-highest (accumulate [min-y math.maxinteger _ {: y} (ipairs b)]
+                    (math.min min-y y))]
+    {:y (* -1 (+ 1 (math.abs (- a-lowest b-highest))))
+     :x 0}))
+
+(fn horizontal-reflect [a b]
+  "Yield a horizontal reflection vector of some object `a` contacting some object
+  `b`. It's assumed that the object `a` is coming from the left."
+  (let [a-rightest (accumulate [max-x math.mininteger _ {: x} (ipairs a)]
+                     (math.max max-x x))
+        b-leftest  (accumulate [min-x math.maxinteger _ {: x} (ipairs b)]
+                     (math.min min-x x))]
+    {:x (* -1 (+ 1 (math.abs (- a-rightest b-leftest))))
+     :y 0}))
+
+(fn reflect [ball block {:x dx :y _}]
   "Given the bounding polygon of a moving object, that of a solid object it's
   contacting, and the movement vector that got the moving object there, product
   a reflection vector by which to adjust the moving object's bounding polygon so
   that it is no longer in contact."
-  (let [ball-lowest (accumulate [max-y math.mininteger _ {:y y} (ipairs ball)]
-                      (math.max max-y y))
-        block-highest (accumulate [min-y math.maxinteger _ {:y y} (ipairs block)]
-                        (math.min min-y y))]
-    {:y (* -1 (+ 1 (math.abs (- ball-lowest block-highest))))
-     :x 0}))
+  (if (= 0 dx) (vertical-reflect ball block)
+      (< 0 dx) (horizontal-reflect ball block)
+      (horizontal-reflect block ball)))
 
 (fn colliding-block [rows ba-bounds]
   "The bounding polygon of the first block hit by the ball."
@@ -328,6 +345,101 @@
         (let [{:x x :y y} (reflect ba-bounds bl-bounds mvec)]
           {:x (+ ball.x x)
            :y (+ ball.y y)}))))
+
+;; --- COLLISION --- ;;
+
+(fn translate [poly {:x dx :y dy}]
+  "Given some baseline bounding polygon and coordinates to shift it by, shift it."
+  (icollect [_ {: x : y} (ipairs poly)]
+    {:x (+ x dx)
+     :y (+ y dy)}))
+
+;; (translate ball-neutral-bbox {:x 0 :y 1})
+
+(fn bounding-rectangle [poly]
+  "Yield the min/max X and Y values of some polygon."
+  (let [init {:x-min math.maxinteger
+              :x-max math.mininteger
+              :y-min math.maxinteger
+              :y-max math.mininteger}]
+    (accumulate [{: x-min : x-max : y-min : y-max} init _ {: x : y} (ipairs poly)]
+      {:x-min (math.min x-min x)
+       :x-max (math.max x-max x)
+       :y-min (math.min y-min y)
+       :y-max (math.max y-max y)})))
+
+;; (bounding-rectangle block-neutral-bbox)
+
+(fn collisions [a b]
+  "All points of a polygon `a` that collide with the bounding rectangle of a
+  polygon `b`."
+  (let [{: x-min : x-max : y-min : y-max} (bounding-rectangle b)]
+    (accumulate [acc [] _ point (ipairs a)]
+      (if (and (<= x-min point.x x-max)
+               (<= y-min point.y y-max))
+          (do (table.insert acc point) acc)
+          acc))))
+
+;; (let [ball ball-neutral-bbox
+;;       block (translate block-neutral-bbox {:x 3 :y 5})]
+;;   (collisions ball block))
+
+(fn vertical-reflect [colliding b]
+  "Yield a vertical reflection vector, given some collision points and a polygon
+  `b`. It's assumed that the original colliding object is coming straight down."
+  (let [colliding (collisions colliding b)]
+    (if (= 0 (length colliding))
+      {:x 0 :y 0}
+      (let [a-lowest  (accumulate [seen math.mininteger _ {: y} (ipairs colliding)] (math.max seen y))
+            b-highest (accumulate [seen math.maxinteger _ {: y} (ipairs b)] (math.min seen y))]
+        {:y (* -1 (+ 1 (math.abs (- a-lowest b-highest))))
+         :x 0}))))
+
+(fn left-reflect [colliding b]
+  (let [colliding (collisions colliding b)]
+    (if (= 0 (length colliding))
+      {:x 0 :y 0}
+      (let [a-leftest  (accumulate [seen math.maxinteger _ {: x} (ipairs colliding)] (math.min seen x))
+            b-rightest (accumulate [seen math.mininteger _ {: x} (ipairs b)] (math.max seen x))]
+        {:x (+ 1 (math.abs (- a-leftest b-rightest)))
+         :y 0}))))
+
+(fn right-reflect [colliding b]
+  (let [colliding (collisions colliding b)]
+    (if (= 0 (length colliding))
+      {:x 0 :y 0}
+      (let [a-rightest (accumulate [seen math.mininteger _ {: x} (ipairs colliding)] (math.max seen x))
+            b-leftest  (accumulate [seen math.maxinteger _ {: x} (ipairs b)] (math.min seen x))]
+        {:x (* -1 (+ 1 (math.abs (- a-rightest b-leftest))))
+         :y 0}))))
+
+(fn reflect [ball block mvec]
+  "Given the current position of a ball and block, and the desired movement vector
+  of the ball, yield a (potentially) modified vector that takes collision into
+  account."
+  (let [desired (translate ball mvec)
+        colliding (collisions desired block)]
+    (if (= 0 (length colliding))
+      mvec
+      (let [{:x dx :y dy} mvec
+            y-less (icollect [_ {: x : y} (ipairs colliding)]
+                     {:x x :y (+ y (* -1 dy))})
+            x-less (icollect [_ {: x : y} (ipairs colliding)]
+                     {:y y :x (+ x (* -1 dx))})
+            vert (vertical-reflect x-less block)
+            hori (if (< mvec.x 0)
+                     (left-reflect y-less block)
+                     (right-reflect y-less block))]
+        {:x (+ mvec.x vert.x hori.x)
+         :y (+ mvec.y vert.y hori.y)}))))
+
+;; (let [mvec  {:x -3 :y 1}
+;;       ball  (translate ball-neutral-bbox {:x 9 :y 0})
+;;       block (translate block-neutral-bbox {:x 0 :y 0})]
+;;   (reflect ball block mvec))
+
+
+;; --- GAME LOOP --- ;;
 
 (fn _G.TIC []
   (when (or (not state.paused)
