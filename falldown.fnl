@@ -105,12 +105,19 @@
  (icollect [_ {:x x :y y} (ipairs ball-neutral-bbox)]
    {:x (+ x screen-x) :y (+ y screen-y)}))
 
+(fn all? [items]
+  "Are all the items in a collection true?"
+  (accumulate [all true _ item (ipairs items) &until (not all)]
+    item))
+
 (fn spawn-row []
   "Generate a new row."
   (let [row []]
     (for [i 1 max-blocks]
       (let [spawn? (~= 1 (math.random 1 (/ max-blocks 5)))]
         (table.insert row spawn?)))
+    (when (all? row)
+      (table.insert row 1 false))
     {:y max-height :blocks row}))
 
 (fn maybe-spawn-row [spawn-rate rows]
