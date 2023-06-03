@@ -59,6 +59,24 @@
         {:x 5 :y 7}
         {:x 6 :y 7}
         {:x 7 :y 7}])
+;; A barrier at the bottom of the screen.
+(local floor-poly
+       (let [acc []]
+         (for [i 0 max-width]
+           (table.insert acc {:x i :y max-height}))
+         acc))
+(local left-wall
+       (let [acc []]
+         (for [i 0 max-height]
+           (table.insert acc {:x -1 :y i})
+           (table.insert acc {:x -8 :y i}))
+         acc))
+(local right-wall
+       (let [acc []]
+         (for [i 0 max-height]
+           (table.insert acc {:x max-width :y i})
+           (table.insert acc {:x (+ 8 max-width) :y i}))
+         acc))
 
 ;; The current state of the game.
 (var state {:t 0
@@ -449,10 +467,11 @@ desired movement."
         row?    (accumulate [in-range nil _ {:y y :blocks row} (ipairs rows) &until in-range]
                   (when (or (<= y min-y (+ y 7))
                             (<= y max-y (+ y 7)))
-                    [y row]))]
-    (if (not row?) []
+                    [y row]))
+        defaults [floor-poly left-wall right-wall]]
+    (if (not row?) defaults
         (let [[y row] row?]
-          (accumulate [acc [] i block? (ipairs row)]
+          (accumulate [acc defaults i block? (ipairs row)]
             (if block?
                 (let [block (translate block-neutral-bbox {:x (* 8 (- i 1)) :y y})]
                   (if (collisions desired block)
