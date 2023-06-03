@@ -81,6 +81,7 @@
 ;; The current state of the game.
 (var state {:t 0
             :ball {:x (- 120 3) :y 1}
+            :past-balls []
             :ball-bounds []
             :rows []
             :spawn-rate-max 50
@@ -148,9 +149,11 @@
   "Draw the ball."
   (spr ball-sprite ball.x ball.y transparency))
 
-(fn draw [ball rows]
+(fn draw [ball past-balls rows]
   "Draw all sprites."
   (cls background)
+  (each [_ past (ipairs past-balls)]
+    (draw-ball past))
   (draw-ball ball)
   (each [_ row (ipairs rows)]
     (draw-row row)))
@@ -345,6 +348,9 @@ collisions have been made."
 (fn _G.TIC []
   (when (or (not state.paused)
             (btn 1))
+    (table.insert state.past-balls 1 state.ball)
+    (when (> (length state.past-balls) 5)
+      (table.remove state.past-balls (length state.past-balls)))
     ;; --- Physics --- ;;
     (let [left?  (btn 2)
           right? (btn 3)
@@ -354,14 +360,17 @@ collisions have been made."
                       (maybe-spawn-row state.spawn-rate-curr)
                       cull-last-row
                       raise-rows)
-          ball   (if (quick-colliding? ball rows)
-                     {:x ball.x :y (- ball.y 1)}
-                     ball)]
+          coll?  (quick-colliding? ball rows)
+          ball   (if coll? {:x ball.x :y (- ball.y 1)} ball)]
+      (when coll?
+        (let [shadows (icollect [_ {: x : y} (ipairs state.past-balls)]
+                        {:x x :y (- y 1)})]
+          (tset state :past-balls shadows)))
       (tset state :ball ball)
       (tset state :rows rows)
-      (tset state :ball-bounds (ball-bounds ball.x ball.y))
+      ;; (tset state :ball-bounds (ball-bounds ball.x ball.y))
       ;; --- Rendering --- ;;
-      (draw ball rows)
+      (draw ball state.past-balls rows)
       ;; (dbg-draw-bbox state.ball-bounds)
       ;; (dbg-detection rows ball)
       ;; (dbg-mvec mvec)
