@@ -438,6 +438,37 @@
 ;;       block (translate block-neutral-bbox {:x 0 :y 0})]
 ;;   (reflect ball block mvec))
 
+;; --- MOVEMENT --- ;;
+
+(fn nearby-polys [ball rows mvec]
+  "Any polygons within the given `rows` which are within range of the ball's
+desired movement."
+  (let [desired (translate ball mvec)
+        min-y   (accumulate [seen math.maxinteger _ {: y} (ipairs desired)] (math.min seen y))
+        max-y   (accumulate [seen math.mininteger _ {: y} (ipairs desired)] (math.max seen y))
+        [y row] (accumulate [in-range nil _ {:y y :blocks row} (ipairs rows) &until in-range]
+                  (when (or (<= y min-y (+ y 7))
+                            (<= y max-y (+ y 7)))
+                    [y row]))]
+    (if (not row) []
+        (accumulate [acc [] i block? (ipairs row)]
+          (if block?
+              (let [block (translate block-neutral-bbox {:x (* 8 (- i 1)) :y y})]
+                (if (collisions desired block)
+                    (do (table.insert acc block) acc)
+                    acc))
+              acc)))))
+
+(fn move [ball rows mvec]
+  "Attempt to move the ball. It does this by colliding with each nearby poly to
+find the resulting actual movement vector, gradually diminishing it until all
+collisions have been made."
+  (let [ball-poly (translate ball-neutral-bbox ball)
+        nearby    (nearby-polys ball-poly rows mvec)
+        actual    (accumulate [vec mvec _ poly (ipairs nearby)]
+                    (reflect ball-poly poly vec))]
+    {:x (+ ball.x actual.x)
+     :y (+ ball.y actual.y)}))
 
 ;; --- GAME LOOP --- ;;
 
