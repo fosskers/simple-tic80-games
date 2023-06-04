@@ -309,13 +309,13 @@
             moved  (translate x-ball {:x 0 :y mvec.y})
             y-coll (collisions moved block)
             y-refl (vertical-reflect y-coll block)]
-        {:x (+ mvec.x x-refl.x y-refl.y)
+        {:x (+ mvec.x x-refl.x x-refl.y)
          :y (+ mvec.y y-refl.x y-refl.y)}))))
 
-(let [mvec  {:x 0 :y 1}
-      ball  (translate ball-neutral-bbox {:x 0 :y 0})
-      block (translate block-neutral-bbox {:x 0 :y 7})]
-  (reflect ball block mvec))
+;; (let [mvec  {:x 0 :y 1}
+;;       ball  (translate ball-neutral-bbox {:x 0 :y 0})
+;;       block (translate block-neutral-bbox {:x 0 :y 7})]
+;;   (reflect ball block mvec))
 
 ;; --- MOVEMENT --- ;;
 
