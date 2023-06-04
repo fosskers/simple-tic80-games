@@ -272,30 +272,50 @@
         {:x (* -1 (+ 1 (math.abs (- a-rightest b-leftest))))
          :y 0}))))
 
+;; (fn reflect [ball block mvec]
+;;   "Given the current position of a ball and block, and the desired movement vector
+;;   of the ball, yield a (potentially) modified vector that takes collision into
+;;   account."
+;;   (let [desired (translate ball mvec)
+;;         colliding (collisions desired block)]
+;;     (if (= 0 (length colliding))
+;;       mvec
+;;       (let [{:x dx :y dy} mvec
+;;             y-less (icollect [_ {: x : y} (ipairs colliding)]
+;;                      {:x x :y (+ y (* -1 dy))})
+;;             x-less (icollect [_ {: x : y} (ipairs colliding)]
+;;                      {:y y :x (+ x (* -1 dx))})
+;;             vert (vertical-reflect x-less block)
+;;             hori (if (< mvec.x 0)
+;;                      (left-reflect y-less block)
+;;                      (right-reflect y-less block))]
+;;         {:x (+ mvec.x vert.x hori.x)
+;;          :y (+ mvec.y vert.y hori.y)}))))
+
 (fn reflect [ball block mvec]
-  "Given the current position of a ball and block, and the desired movement vector
-  of the ball, yield a (potentially) modified vector that takes collision into
-  account."
-  (let [desired (translate ball mvec)
+  "Given the current position of a ball and block, and the desired movement
+  vector of the ball, yield a (potentially) modified vector that takes collision
+  into account."
+  (let [desired   (translate ball mvec)
         colliding (collisions desired block)]
     (if (= 0 (length colliding))
       mvec
-      (let [{:x dx :y dy} mvec
-            y-less (icollect [_ {: x : y} (ipairs colliding)]
-                     {:x x :y (+ y (* -1 dy))})
-            x-less (icollect [_ {: x : y} (ipairs colliding)]
-                     {:y y :x (+ x (* -1 dx))})
-            vert (vertical-reflect x-less block)
-            hori (if (< mvec.x 0)
-                     (left-reflect y-less block)
-                     (right-reflect y-less block))]
-        {:x (+ mvec.x vert.x hori.x)
-         :y (+ mvec.y vert.y hori.y)}))))
+      (let [x-only (translate ball {:x mvec.x :y 0})
+            x-coll (collisions x-only block)
+            x-refl (if (< mvec.x 0)
+                     (left-reflect x-coll block)
+                     (right-reflect x-coll block))
+            x-ball (translate ball {:x (+ mvec.x x-refl.x) :y x-refl.y})
+            moved  (translate x-ball {:x 0 :y mvec.y})
+            y-coll (collisions moved block)
+            y-refl (vertical-reflect y-coll block)]
+        {:x (+ mvec.x x-refl.x y-refl.y)
+         :y (+ mvec.y y-refl.x y-refl.y)}))))
 
-;; (let [mvec  {:x -3 :y 1}
-;;       ball  (translate ball-neutral-bbox {:x 9 :y 0})
-;;       block (translate block-neutral-bbox {:x 0 :y 0})]
-;;   (reflect ball block mvec))
+(let [mvec  {:x 0 :y 1}
+      ball  (translate ball-neutral-bbox {:x 0 :y 0})
+      block (translate block-neutral-bbox {:x 0 :y 7})]
+  (reflect ball block mvec))
 
 ;; --- MOVEMENT --- ;;
 
@@ -315,7 +335,7 @@ desired movement."
           (accumulate [acc defaults i block? (ipairs row)]
             (if block?
                 (let [block (translate block-neutral-bbox {:x (* 8 (- i 1)) :y y})]
-                  (if (collisions desired block)
+                  (if (> (length (collisions desired block)) 0)
                       (do (table.insert acc 1 block) acc)
                       acc))
                 acc))))))
@@ -325,9 +345,10 @@ desired movement."
 find the resulting actual movement vector, gradually diminishing it until all
 collisions have been made."
   (let [ball-poly (translate ball-neutral-bbox ball)  ;; Correct?
-        nearby    (nearby-polys ball-poly rows mvec)]
-    (accumulate [vec mvec _ poly (ipairs nearby)]
-      (reflect ball-poly poly vec))))
+        nearby    (nearby-polys ball-poly rows mvec)
+        final     (accumulate [vec mvec _ poly (ipairs nearby)]
+                    (reflect ball-poly poly vec))]
+    [final nearby]))
 
 (fn quick-colliding? [ball rows]
   "Is the ball colliding downwards with any blocks?"
@@ -338,8 +359,9 @@ collisions have been made."
       (accumulate [colliding? false i block? (ipairs row) &until colliding?]
         (and block?
              (= bottom y)
-             (or (<= (* 8 (- i 1)) left  (* 8 i))
-                 (<= (* 8 (- i 1)) right (* 8 i))))))))
+             (let [foo (* 8 (- i 1))]
+               (or (<= foo left  (+ 7 foo))
+                   (<= foo right (* 7 foo)))))))))
 
 ;; --- GAME LOOP --- ;;
 
@@ -353,7 +375,7 @@ collisions have been made."
     (let [left?  (btn 2)
           right? (btn 3)
           desire (movement-vector left? right?)
-          mvec   (adjust-for-collision state.ball state.rows desire)
+          [mvec nearby] (adjust-for-collision state.ball state.rows desire)
           ball   {:x (+ state.ball.x mvec.x)
                   :y (+ state.ball.y mvec.y)}
           rows   (->> state.rows
@@ -374,6 +396,9 @@ collisions have been made."
       (print (string.format "D: (%d, %d)" desire.x desire.y) 0 8)
       (print (string.format "A: (%d, %d)" mvec.x mvec.y) 0 16)
       (print (string.format "Coll? %s" coll?) 0 24)
+      (each [_ poly (ipairs nearby)]
+        (each [_ {: x : y} (ipairs poly)]
+          (pix x y 2)))
       ;; (dbg-draw-bbox state.ball-bounds)
       ;; (dbg-detection rows ball)
       ;; (dbg-mvec mvec)
