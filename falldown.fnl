@@ -16,6 +16,8 @@
 (local ball-rate 4)
 ;; The downward pull of gravity.
 (local gravity-rate 1)
+;; Increase the spawn rate after this many frames.
+(local speed-up-frames 150)
 ;; The maximum width of the screen.
 (local max-width 240)
 ;; The maximum height of the screen.
@@ -84,7 +86,7 @@
             :past-balls []
             :ball-bounds []
             :rows []
-            :spawn-rate-max 50
+            :spawn-rate-max 30
             :spawn-rate-curr 0
             :paused false})
 
@@ -389,12 +391,14 @@ collisions have been made."
         (exit)))
     ;; Adjust the block spawn rate if necessary.
     (if (= 0 state.spawn-rate-curr)
-        (do (tset state :spawn-rate-max (math.max 16 (- state.spawn-rate-max 1)))
-            (tset state :spawn-rate-curr state.spawn-rate-max))
+        (tset state :spawn-rate-curr state.spawn-rate-max)
         (tset state :spawn-rate-curr (- state.spawn-rate-curr 1)))
     ;; The slow, steady march of time.
     (tset state :t (+ 1 state.t))
+    (when (= 0 (% state.t speed-up-frames))
+      (tset state :spawn-rate-max (- state.spawn-rate-max 1)))
     (print (string.format "Score: %d" state.t)))
+    ;; (print (string.format "Spawn Rate: %d" state.spawn-rate-max) 0 8))
   ;; Have they paused or unpaused the game?
   (when (key 16)
     (tset state :paused (not state.paused))))
