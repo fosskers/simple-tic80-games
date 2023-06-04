@@ -122,7 +122,7 @@
   "Generate a new row."
   (let [row []]
     (for [i 1 max-blocks]
-      (let [spawn? (~= 1 (math.random 1 (/ max-blocks 5)))]
+      (let [spawn? (~= 1 (math.random 1 8))]
         (table.insert row spawn?)))
     (when (all? row)
       (table.insert row 1 false))
