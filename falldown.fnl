@@ -95,7 +95,8 @@
    :spawn-rate-curr 0
    :paused false
    :screen start
-   :previous-score 0})
+   :previous-score 0
+   :high-score (pmem 0)})
 
 ;; The current state of the game.
 (var state (init-state))
@@ -369,10 +370,11 @@ collisions have been made."
   (print "Space" (* 8 12) (* 8 13) 10 true 1)
   (print "to start" (- (* 8 17) 4) (* 8 13) 12 true 1))
 
-(fn game-over [score]
+(fn game-over [score high-score]
   (map 30 0)
   (print "GAME OVER" (* 8 5) 32 12 true 3)
-  (print (string.format "Score: %d" score) (+ 4 (* 8 11)) (* 8 9) 12 true)
+  (print (string.format "Score: %d" score) (- (* 8 14) 2) (* 8 9) 12 true)
+  (print (string.format "High Score: %d" high-score) (* 8 10) (* 8 10) 12 true)
   (print "Press" (- (* 8 8) 4) (* 8 11) 12 true 1)
   (print "Space" (* 8 12) (* 8 11) 9 true 1)
   (print "to restart" (- (* 8 17) 4) (* 8 11) 12 true 1)
@@ -388,7 +390,7 @@ collisions have been made."
           (when (key 48)
             (tset state :screen game)))
       (= dead state.screen)
-      (do (game-over state.previous-score)
+      (do (game-over state.previous-score state.high-score)
           (when (key 48)
             (tset state :screen game)))
       (= game state.screen)
@@ -433,7 +435,10 @@ collisions have been made."
           (when (game-over? ball)
             (let [new-state (init-state)
                   score state.t]
+              (when (> score (pmem 0))
+                (pmem 0 score))
               (tset new-state :previous-score score)
+              (tset new-state :high-score (pmem 0))
               (set state new-state)
               (tset state :screen dead))))
             ;; (trace (string.format "Game over! Score: %d" state.t))))
