@@ -1,9 +1,9 @@
 ;; title:   Falldown
 ;; author:  Colin Woodbury <colin@fosskers.ca>
-;; desc:    Fall as far as you can! The classic TI-83 game reborn.
+;; desc:    Fall far and don't hesitate! The classic TI-83 game reborn.
 ;; site:    https://git.sr.ht/~fosskers/simple-tic80-games
 ;; license: GPLv3
-;; version: 0.1
+;; version: 2.0.0
 ;; script:  fennel
 ;; strict:  true
 ;; input:   keyboard
@@ -372,10 +372,13 @@ collisions have been made."
 (fn game-over [score]
   (map 30 0)
   (print "GAME OVER" (* 8 5) 32 12 true 3)
-  (print (string.format "Score: %d" score) (+ 4 (* 8 11)) (* 8 10) 12 true)
-  (print "Press" (- (* 8 8) 4) (* 8 12) 12 true 1)
-  (print "Space" (* 8 12) (* 8 12) 9 true 1)
-  (print "to restart" (- (* 8 17) 4) (* 8 12) 12 true 1))
+  (print (string.format "Score: %d" score) (+ 4 (* 8 11)) (* 8 9) 12 true)
+  (print "Press" (- (* 8 8) 4) (* 8 11) 12 true 1)
+  (print "Space" (* 8 12) (* 8 11) 9 true 1)
+  (print "to restart" (- (* 8 17) 4) (* 8 11) 12 true 1)
+  (print "FALLDOWN by CW (2023)" 0 (* 8 14) 12 true)
+  (print "Inspired by TI-83 port by IG (1999)" 0 (* 8 15) 12 true)
+  (print "Original by AE and FD (199x)" 0 (* 8 16) 12 true))
 
 ;; --- GAME LOOP --- ;;
 
