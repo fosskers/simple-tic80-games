@@ -272,26 +272,6 @@
         {:x (* -1 (+ 1 (math.abs (- a-rightest b-leftest))))
          :y 0}))))
 
-;; (fn reflect [ball block mvec]
-;;   "Given the current position of a ball and block, and the desired movement vector
-;;   of the ball, yield a (potentially) modified vector that takes collision into
-;;   account."
-;;   (let [desired (translate ball mvec)
-;;         colliding (collisions desired block)]
-;;     (if (= 0 (length colliding))
-;;       mvec
-;;       (let [{:x dx :y dy} mvec
-;;             y-less (icollect [_ {: x : y} (ipairs colliding)]
-;;                      {:x x :y (+ y (* -1 dy))})
-;;             x-less (icollect [_ {: x : y} (ipairs colliding)]
-;;                      {:y y :x (+ x (* -1 dx))})
-;;             vert (vertical-reflect x-less block)
-;;             hori (if (< mvec.x 0)
-;;                      (left-reflect y-less block)
-;;                      (right-reflect y-less block))]
-;;         {:x (+ mvec.x vert.x hori.x)
-;;          :y (+ mvec.y vert.y hori.y)}))))
-
 (fn reflect [ball block mvec]
   "Given the current position of a ball and block, and the desired movement
   vector of the ball, yield a (potentially) modified vector that takes collision
