@@ -84,7 +84,7 @@
             :past-balls []
             :ball-bounds []
             :rows []
-            :spawn-rate-max 60
+            :spawn-rate-max 50
             :spawn-rate-curr 0
             :paused false})
 
@@ -152,8 +152,8 @@
 (fn draw [ball past-balls rows]
   "Draw all sprites."
   (cls background)
-  ;; (each [_ past (ipairs past-balls)]
-  ;;   (draw-ball past))
+  (each [_ past (ipairs past-balls)]
+    (draw-ball past))
   (draw-ball ball)
   (each [_ row (ipairs rows)]
     (draw-row row)))
@@ -373,12 +373,12 @@ collisions have been made."
       ;; (tset state :ball-bounds (ball-bounds ball.x ball.y))
       ;; --- Rendering --- ;;
       (draw ball state.past-balls rows)
-      (print (string.format "D: (%d, %d)" desire.x desire.y) 0 8)
-      (print (string.format "A: (%d, %d)" mvec.x mvec.y) 0 16)
-      (print (string.format "Coll? %s" coll?) 0 24)
-      (each [_ poly (ipairs nearby)]
-        (each [_ {: x : y} (ipairs poly)]
-          (pix x y 2)))
+      ;; (print (string.format "D: (%d, %d)" desire.x desire.y) 0 8)
+      ;; (print (string.format "A: (%d, %d)" mvec.x mvec.y) 0 16)
+      ;; (print (string.format "Coll? %s" coll?) 0 24)
+      ;; (each [_ poly (ipairs nearby)]
+      ;;   (each [_ {: x : y} (ipairs poly)]
+      ;;     (pix x y 2)))
       ;; (dbg-draw-bbox state.ball-bounds)
       ;; (dbg-detection rows ball)
       ;; (dbg-mvec mvec)
